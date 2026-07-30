@@ -212,9 +212,10 @@
   const bboxCenter = new THREE.Vector3(); bbox.getCenter(bboxCenter);
   const bboxSize = new THREE.Vector3(); bbox.getSize(bboxSize);
   const homeTarget = bboxCenter.clone();
-  // 2.6× longest axis frames the whole galaxy comfortably at 55° FoV;
-  // 1.35× was undershooting hard on the compact cluster.
-  const homeDist = Math.max(60, Math.max(bboxSize.x, bboxSize.y, bboxSize.z) * 2.6);
+  // 1.8× longest axis: close enough that the galaxy fills the frame around
+  // the wordmark, far enough that no sphere covers it. (2.6× shrank it to
+  // a blob behind the text; 1.35× was way too close.)
+  const homeDist = Math.max(45, Math.max(bboxSize.x, bboxSize.y, bboxSize.z) * 1.8);
   let camDist = homeDist;
   let yaw = 0.7, pitch = 0.25;
   let autoRotate = true;
