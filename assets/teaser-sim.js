@@ -292,11 +292,12 @@
   const HOVER_RADIUS = 34, HOVER_PUSH = 4, HOVER_GLOW = 1.15, HOVER_SCALE = 0.24;
   const RIPPLE_SPEED = 60, RIPPLE_WIDTH = 15, RIPPLE_MAX = 95;
   const RIPPLE_PUSH = 5, RIPPLE_GLOW = 1.5, RIPPLE_SCALE = 0.34;
-  const EASE = 0.16;
-  const ripples = []; // { o: Vector3 origin, t: seconds alive }
+  const EASE = 0.16;       // position spring
+  const GLOW_EASE = 0.34;  // faster attack so a quick pass still lights stars
+  const ripples = []; // { o: Vector3 origin, t: seconds alive, amp: strength }
 
   let pointerActive = false, pNdcX = 0, pNdcY = 0;
-  let lastPx = 0, lastPy = 0, movedSinceRipple = 0, lastRippleT = 0;
+  let lastPx = 0, lastPy = 0, movedSinceRipple = 0, lastMoveT = performance.now();
 
   const _plane = new THREE.Plane();
   const _rcH = new THREE.Raycaster();
@@ -315,15 +316,24 @@
     pNdcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     pNdcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     pointerActive = true;
+    const now = performance.now();
     const dpx = Math.hypot(e.clientX - lastPx, e.clientY - lastPy);
-    lastPx = e.clientX; lastPy = e.clientY;
+    const speed = dpx / Math.max(1, now - lastMoveT); // px per ms
+    lastPx = e.clientX; lastPy = e.clientY; lastMoveT = now;
     if (!dragging) {
+      // Spawn a ripple every ~40px of travel — so a fast flick lays down a
+      // whole streak of them along the path instead of one every 90ms. Each
+      // ripple's amplitude scales with speed: a quick flick hits hard, a
+      // slow drift is a soft swell.
       movedSinceRipple += dpx;
-      const now = performance.now();
-      if (movedSinceRipple > 70 && now - lastRippleT > 90) {
+      if (movedSinceRipple > 40) {
         const p = pointAt(pNdcX, pNdcY);
-        if (p) { ripples.push({ o: p, t: 0 }); if (ripples.length > 6) ripples.shift(); }
-        movedSinceRipple = 0; lastRippleT = now;
+        if (p) {
+          const amp = Math.min(2.6, 0.45 + speed * 1.2);
+          ripples.push({ o: p, t: 0, amp });
+          if (ripples.length > 14) ripples.shift();
+        }
+        movedSinceRipple = 0;
       }
     }
   });
@@ -403,7 +413,7 @@
         const dd = Math.abs(base.distanceTo(r.o) - shell);
         if (dd < RIPPLE_WIDTH) {
           const fade = 1 - shell / RIPPLE_MAX;               // weaker as it expands
-          const f = (1 - dd / RIPPLE_WIDTH) * fade;
+          const f = (1 - dd / RIPPLE_WIDTH) * fade * (r.amp || 1); // speed-scaled
           _dir.copy(base).sub(r.o);
           if (_dir.lengthSq() < 1e-4) _dir.set(0, 1, 0);
           _dir.normalize();
@@ -415,9 +425,9 @@
       // Ease toward rest+displacement, glow, and scale — springs back on its own.
       m.position.lerp(_disp.add(base), EASE);
       const be = m.userData.baseEmissive, bs = m.userData.baseScale;
-      m.material.emissiveIntensity += ((be + glow) - m.material.emissiveIntensity) * EASE;
+      m.material.emissiveIntensity += ((be + glow) - m.material.emissiveIntensity) * GLOW_EASE;
       const sc = bs * (1 + scaleB);
-      m.scale.setScalar(m.scale.x + (sc - m.scale.x) * EASE);
+      m.scale.setScalar(m.scale.x + (sc - m.scale.x) * GLOW_EASE);
     }
 
     // Lines follow their (now-jiggling) endpoints so the whole web ripples.
