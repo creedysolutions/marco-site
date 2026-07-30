@@ -291,7 +291,8 @@
   // pulse stars as they pass through — the "the galaxy notices you" feel.
   const HOVER_RADIUS = 34, HOVER_PUSH = 4, HOVER_GLOW = 1.15, HOVER_SCALE = 0.24;
   const RIPPLE_SPEED = 60, RIPPLE_WIDTH = 15, RIPPLE_MAX = 95;
-  const RIPPLE_PUSH = 5, RIPPLE_GLOW = 1.5, RIPPLE_SCALE = 0.34;
+  // Halved 2026-07-29 — ripple was ~2x too strong (hover field unchanged).
+  const RIPPLE_PUSH = 2.5, RIPPLE_GLOW = 0.75, RIPPLE_SCALE = 0.17;
   const EASE = 0.16;       // position spring
   const GLOW_EASE = 0.34;  // faster attack so a quick pass still lights stars
   const ripples = []; // { o: Vector3 origin, t: seconds alive, amp: strength }
