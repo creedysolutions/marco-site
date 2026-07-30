@@ -205,13 +205,17 @@
   }
 
   // --- camera framing ----------------------------------------------------
-  // Center on the crowd, back off by its radius.
-  const center = new THREE.Vector3();
-  for (const n of nodes) center.add(n.pos);
-  center.divideScalar(nodes.length);
-  let camDist = 130;
+  // Frame the actual bounding box (averages drift toward dense clusters).
+  const bbox = new THREE.Box3();
+  for (const n of nodes) bbox.expandByPoint(n.pos);
+  const bboxCenter = new THREE.Vector3(); bbox.getCenter(bboxCenter);
+  const bboxSize = new THREE.Vector3(); bbox.getSize(bboxSize);
+  const homeTarget = bboxCenter.clone();
+  const homeDist = Math.max(bboxSize.x, bboxSize.y, bboxSize.z) * 1.35;
+  let camDist = homeDist;
   let yaw = 0.7, pitch = 0.25;
-  const target = center.clone();
+  let autoRotate = true;
+  const target = homeTarget.clone();
   function updateCamera() {
     const cp = pitch;
     const cy = yaw;
@@ -291,11 +295,17 @@
     autoRotate = false;
     updateCamera();
   }
-  function clearFocus() { $("focus").classList.remove("on"); }
+  function clearFocus() {
+    $("focus").classList.remove("on");
+    // Fly back to a comfortable overview instead of stranding the camera
+    // wherever the last focus landed it.
+    target.copy(homeTarget); camDist = homeDist;
+    autoRotate = true;
+    updateCamera();
+  }
   document.querySelector("#focus .close").addEventListener("click", clearFocus);
 
   // --- animate: slow autorotate until user touches ----------------------
-  let autoRotate = true;
   function loop() {
     if (autoRotate) { yaw += 0.0018; updateCamera(); }
     renderer.render(scene, camera);
