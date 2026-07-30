@@ -157,6 +157,9 @@
 
   /* --- focus card: decorative Object-Manager groupings --- */
   #focus { width: 258px; } /* widen slightly to fit count pill */
+  /* On phones the card would blanket most of the screen mid-game, so hide it
+     while a round is running. Desktop keeps the full behavior. */
+  @media (max-width: 640px) { body.gaming #focus { display: none; } }
   .fsecs { margin-top: 12px; border-top: 1px solid #1c2136; padding-top: 6px; }
   .fsec { display: flex; align-items: center; gap: 8px; padding: 6px 2px;
     border-bottom: 1px solid #141828; }
