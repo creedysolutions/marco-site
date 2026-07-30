@@ -267,7 +267,8 @@
       const rc = new THREE.Raycaster();
       rc.setFromCamera({ x: nx, y: ny }, camera);
       const hit = rc.intersectObjects(meshes, false)[0];
-      if (hit) focusOn(hit.object.userData.node);
+      if (game.on) { game.guess(hit ? hit.object.userData.node : null); }
+      else if (hit) focusOn(hit.object.userData.node);
       else clearFocus();
     }
   });
@@ -374,8 +375,77 @@
   }
   document.querySelector("#focus .close").addEventListener("click", clearFocus);
 
+  // --- game: "Marco… Polo!" find-the-object -----------------------------
+  // A round names a target; hover stars to read names, click the target to
+  // score. No help for the first HINT1 seconds, then the target's galaxy is
+  // spotlit (others dimmed), then the target itself pulses.
+  const HINT1 = 6, HINT2 = 12; // seconds
+  const game = {
+    on: false, target: null, score: 0, streak: 0,
+    best: +(localStorage.getItem("marcoGameBest") || 0),
+    roundT: 0, hovered: null, hintLevel: 0,
+    el: $("game"), name: $("gName"), scoreEl: $("gScore"),
+    streakEl: $("gStreak"), bestEl: $("gBest"), hintEl: $("gHint"),
+    label: $("hoverLabel"), toastEl: $("gToast"),
+
+    start() {
+      this.on = true; this.score = 0; this.streak = 0;
+      document.body.classList.add("gaming");
+      this.el.hidden = false;
+      clearFocus();
+      autoRotate = false; target.copy(homeTarget); camDist = homeDist; updateCamera();
+      this.next(); this.hud();
+    },
+    end() {
+      this.on = false;
+      document.body.classList.remove("gaming");
+      this.el.hidden = true; this.label.hidden = true; this.hovered = null;
+      autoRotate = true; target.copy(homeTarget); camDist = homeDist;
+    },
+    next() {
+      let t = this.target;
+      while (t === this.target) t = nodes[(Math.random() * nodes.length) | 0];
+      this.target = t;
+      this.name.textContent = t.id;
+      this.roundT = performance.now();
+      this.hintLevel = 0; this.hintEl.textContent = "";
+    },
+    guess(node) {
+      if (!node) return; // clicked empty space
+      if (node === this.target) {
+        this.score++; this.streak++;
+        if (this.streak > this.best) {
+          this.best = this.streak;
+          localStorage.setItem("marcoGameBest", this.best);
+        }
+        this.toast("Found.", "good");
+        target.copy(node.pos); camDist = 48; updateCamera(); // fly to it
+        this.next();
+      } else {
+        this.streak = 0;
+        this.toast("Marco…", "bad");
+      }
+      this.hud();
+    },
+    hud() {
+      this.scoreEl.textContent = `Found ${this.score}`;
+      this.streakEl.textContent = `streak ${this.streak}`;
+      this.bestEl.textContent = `best ${this.best}`;
+    },
+    toast(msg, kind) {
+      const el = this.toastEl;
+      el.textContent = msg; el.className = "gtoast show " + kind; el.hidden = false;
+      clearTimeout(this._tt);
+      this._tt = setTimeout(() => { el.className = "gtoast " + kind; }, 650);
+    }
+  };
+  const GROUP_LABEL = { std: "slate", custom: "purple", cpq: "gold", fsl: "green", inv: "cyan", mdt: "pink" };
+  $("playBtn").addEventListener("click", () => game.start());
+  $("gEnd").addEventListener("click", () => game.end());
+
   // --- animate: autorotate + mouse-reaction physics + line-follow --------
   const _disp = new THREE.Vector3(), _dir = new THREE.Vector3();
+  const _rcPick = new THREE.Raycaster();
   let lastFrame = performance.now();
   function loop() {
     const now = performance.now();
@@ -392,6 +462,31 @@
     for (const r of ripples) r.t += dt;
     for (let i = ripples.length - 1; i >= 0; i--) {
       if (ripples[i].t * RIPPLE_SPEED > RIPPLE_MAX) ripples.splice(i, 1);
+    }
+
+    // Game: hint escalation + hover-to-read-name tooltip.
+    let gTargetGrp = null; // non-null once we spotlight the target's galaxy
+    if (game.on && game.target) {
+      const el = (now - game.roundT) / 1000;
+      const lvl = el >= HINT2 ? 2 : el >= HINT1 ? 1 : 0;
+      if (lvl !== game.hintLevel) {
+        game.hintLevel = lvl;
+        game.hintEl.textContent =
+          lvl === 2 ? "look for the pulsing star…" :
+          lvl === 1 ? `it's in the ${GROUP_LABEL[game.target.grp]} galaxy…` : "";
+      }
+      if (lvl >= 1) gTargetGrp = game.target.grp;
+      if (pointerActive) {
+        _rcPick.setFromCamera({ x: pNdcX, y: pNdcY }, camera);
+        const h = _rcPick.intersectObjects(meshes, false)[0];
+        game.hovered = h ? h.object : null;
+        if (game.hovered) {
+          game.label.textContent = game.hovered.userData.node.id;
+          game.label.style.left = lastPx + "px";
+          game.label.style.top = lastPy + "px";
+          game.label.hidden = false;
+        } else game.label.hidden = true;
+      } else { game.label.hidden = true; game.hovered = null; }
     }
 
     for (const m of meshes) {
@@ -427,8 +522,19 @@
       // Ease toward rest+displacement, glow, and scale — springs back on its own.
       m.position.lerp(_disp.add(base), EASE);
       const be = m.userData.baseEmissive, bs = m.userData.baseScale;
-      m.material.emissiveIntensity += ((be + glow) - m.material.emissiveIntensity) * GLOW_EASE;
-      const sc = bs * (1 + scaleB);
+      let emTarget = be + glow, scMul = 1 + scaleB;
+      if (gTargetGrp) {
+        const isTarget = m.userData.node === game.target;
+        // Spotlight: dim everything outside the target's galaxy.
+        if (!isTarget && m.userData.node.grp !== gTargetGrp) { emTarget *= 0.14; scMul *= 0.42; }
+        // Level 2: the target star itself pulses.
+        if (game.hintLevel >= 2 && isTarget) {
+          const pulse = 0.5 + 0.5 * Math.sin(now * 0.006);
+          emTarget += 1.1 * pulse; scMul *= 1 + 0.35 * pulse;
+        }
+      }
+      m.material.emissiveIntensity += (emTarget - m.material.emissiveIntensity) * GLOW_EASE;
+      const sc = bs * scMul;
       m.scale.setScalar(m.scale.x + (sc - m.scale.x) * GLOW_EASE);
     }
 

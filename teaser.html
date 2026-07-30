@@ -81,6 +81,44 @@
     text-align: center; color: #4a5470; font-size: 11px; padding: 0 24px;
     pointer-events: none; }
   footer a { color: #6b7590; pointer-events: auto; }
+
+  /* --- game --- */
+  body.gaming .q, body.gaming .line, body.gaming .soon,
+  body.gaming .hint, body.gaming .play { display: none; }
+  .play { margin-top: 26px; padding: 11px 22px; border-radius: 11px; cursor: pointer;
+    background: rgba(109, 94, 242, .14); border: 1px solid #4a4382; color: #cfc9ff;
+    font-size: 14px; font-weight: 700; letter-spacing: .2px; pointer-events: auto;
+    transition: background .15s, border-color .15s; }
+  .play:hover { background: rgba(109, 94, 242, .28); border-color: #6d5ef2; color: #fff; }
+
+  .game { position: fixed; z-index: 5; top: 22px; left: 50%; transform: translateX(-50%);
+    width: min(420px, calc(100vw - 28px)); text-align: center;
+    background: rgba(13, 16, 28, .9); border: 1px solid #2a3149; border-radius: 14px;
+    padding: 14px 18px 16px; backdrop-filter: blur(6px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .5); }
+  .g-end { position: absolute; top: 8px; right: 10px; background: none; border: none;
+    color: #5b657d; font-size: 13px; cursor: pointer; }
+  .g-end:hover { color: #fff; }
+  .g-call { color: #8b7bff; font-size: 12px; font-weight: 800; letter-spacing: 3px;
+    text-transform: uppercase; }
+  .g-target { color: #e8ebf5; font-size: 20px; font-weight: 700; margin-top: 3px; }
+  .g-target b { color: #fff; }
+  .g-target code, .g-target b { font-family: inherit; }
+  .g-stats { color: #8b95ad; font-size: 12px; margin-top: 8px; }
+  .g-stats span { color: #cfd6ee; }
+  .g-hint { color: #f0b95c; font-size: 12px; margin-top: 8px; min-height: 15px; }
+
+  .hoverlabel { position: fixed; z-index: 6; pointer-events: none; transform: translate(-50%, -140%);
+    background: rgba(13, 16, 28, .95); border: 1px solid #2a3149; border-radius: 7px;
+    padding: 3px 9px; font-size: 12px; color: #e8ebf5; white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .55); }
+
+  .gtoast { position: fixed; z-index: 6; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(.9);
+    font-size: 44px; font-weight: 800; letter-spacing: -1px; pointer-events: none;
+    opacity: 0; transition: opacity .25s, transform .25s; text-shadow: 0 4px 30px rgba(0,0,0,.7); }
+  .gtoast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .gtoast.good { color: #7be3a3; }
+  .gtoast.bad { color: #ff9b9b; }
 </style>
 </head>
 <body>
@@ -97,8 +135,22 @@
         both directions. Your whole org as a <b>navigable 3D universe</b>.</p>
       <div class="soon">Private beta now · Chrome Web Store</div>
       <div class="hint">drag to orbit · scroll to zoom · click a star</div>
+      <button id="playBtn" class="play">▶ Play “Marco… Polo!”</button>
     </main>
   </div>
+
+  <!-- game HUD: hidden until Play. Prompt + score at the top; hover a star to
+       read its name, click the named target to score. -->
+  <div id="game" class="game" hidden>
+    <button id="gEnd" class="g-end" title="End game">✕</button>
+    <div class="g-call">Marco!</div>
+    <div class="g-target">Find <b id="gName"></b></div>
+    <div class="g-stats"><span id="gScore">Found 0</span> · <span id="gStreak">streak 0</span>
+      · <span id="gBest">best 0</span></div>
+    <div class="g-hint" id="gHint"></div>
+  </div>
+  <div id="hoverLabel" class="hoverlabel" hidden></div>
+  <div id="gToast" class="gtoast" hidden></div>
 
   <aside id="focus">
     <button class="close" title="Close">✕</button>
@@ -115,6 +167,6 @@
 
   <script src="assets/vendor/three-r128.min.js"></script>
   <!-- bump ?v= whenever teaser-sim.js changes so browsers pick it up. -->
-  <script src="assets/teaser-sim.js?v=7"></script>
+  <script src="assets/teaser-sim.js?v=8"></script>
 </body>
 </html>
