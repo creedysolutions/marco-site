@@ -267,8 +267,12 @@
       const rc = new THREE.Raycaster();
       rc.setFromCamera({ x: nx, y: ny }, camera);
       const hit = rc.intersectObjects(meshes, false)[0];
-      if (game.on) { game.guess(hit ? hit.object.userData.node : null); }
-      else if (hit) focusOn(hit.object.userData.node);
+      if (game.on) {
+        // During a round, a click IS a guess — and it also opens the star's
+        // detail card so users see what they clicked (right or wrong).
+        game.guess(hit ? hit.object.userData.node : null);
+        if (hit) focusOn(hit.object.userData.node);
+      } else if (hit) focusOn(hit.object.userData.node);
       else clearFocus();
     }
   });
@@ -449,6 +453,7 @@
       document.body.classList.remove("gaming");
       this.el.hidden = true; this.label.hidden = true; this.hovered = null;
       this.over.hidden = true;
+      clearFocus();
       autoRotate = true; target.copy(homeTarget); camDist = homeDist;
     },
     timeUp() {
@@ -456,6 +461,7 @@
       this.on = false;
       this.el.hidden = true; // hide the game HUD so only the over-card shows
       this.label.hidden = true; this.hovered = null;
+      clearFocus(); // don't strand a focus card behind the game-over screen
       if (this.score > this.bestScore) {
         this.bestScore = this.score;
         localStorage.setItem("marcoGameBestScore", this.bestScore);
