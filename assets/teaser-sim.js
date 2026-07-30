@@ -20,25 +20,26 @@
   renderer.setSize(innerWidth, innerHeight);
   renderer.setClearColor(0x05060e, 0);
 
-  // Ambient purple rim + a warm accent so the spheres look like stars,
-  // not shaded balls.
-  scene.add(new THREE.AmbientLight(0x6e73aa, 0.55));
-  const key = new THREE.PointLight(0x8b7bff, 1.2, 800);
+  // Near-neutral lights so the palette isn't washed out to lavender.
+  // (Original bright-purple key made every group read as "custom".)
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const key = new THREE.PointLight(0xffffff, 0.7, 800);
   key.position.set(80, 60, 140);
   scene.add(key);
-  const fill = new THREE.PointLight(0xffb46b, 0.5, 600);
+  const fill = new THREE.PointLight(0xffd39c, 0.35, 600);
   fill.position.set(-140, -60, -80);
   scene.add(fill);
 
   // --- data: name, group, size (deg) ------------------------------------
   // Palette mirrors the Universe.
+  // Distinct hues so each galaxy reads as itself, not "everything is purple."
   const COLORS = {
-    std:    0xaeb8d6,
-    custom: 0xa99df7,
-    cpq:    0xf0b95c,
-    fsl:    0x7be3a3,
-    inv:    0x79d2e6,
-    mdt:    0x5affc7
+    std:    0xd7dceb, // brighter slate — the neutral backbone
+    custom: 0xb083ff, // saturated Marco purple
+    cpq:    0xffb347, // warm gold
+    fsl:    0x66e296, // green
+    inv:    0x60c9e3, // cyan
+    mdt:    0xff86c1  // pink (was teal — collided with fsl/inv)
   };
   const NODES = [
     // standard core
@@ -180,7 +181,7 @@
     const mat = new THREE.MeshStandardMaterial({
       color: COLORS[n.grp],
       emissive: COLORS[n.grp],
-      emissiveIntensity: 0.35,
+      emissiveIntensity: 0.55,
       roughness: 0.35, metalness: 0.15
     });
     const m = new THREE.Mesh(sphereGeo, mat);
@@ -211,7 +212,9 @@
   const bboxCenter = new THREE.Vector3(); bbox.getCenter(bboxCenter);
   const bboxSize = new THREE.Vector3(); bbox.getSize(bboxSize);
   const homeTarget = bboxCenter.clone();
-  const homeDist = Math.max(bboxSize.x, bboxSize.y, bboxSize.z) * 1.35;
+  // 2.6× longest axis frames the whole galaxy comfortably at 55° FoV;
+  // 1.35× was undershooting hard on the compact cluster.
+  const homeDist = Math.max(60, Math.max(bboxSize.x, bboxSize.y, bboxSize.z) * 2.6);
   let camDist = homeDist;
   let yaw = 0.7, pitch = 0.25;
   let autoRotate = true;
