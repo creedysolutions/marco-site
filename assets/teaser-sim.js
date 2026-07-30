@@ -454,6 +454,7 @@
     timeUp() {
       // Freeze the round; the game-over card pops with stats + share.
       this.on = false;
+      this.el.hidden = true; // hide the game HUD so only the over-card shows
       this.label.hidden = true; this.hovered = null;
       if (this.score > this.bestScore) {
         this.bestScore = this.score;
