@@ -119,6 +119,55 @@
   .gtoast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   .gtoast.good { color: #7be3a3; }
   .gtoast.bad { color: #ff9b9b; }
+
+  /* --- countdown timer --- */
+  .g-time { margin-top: 8px; font-size: 30px; font-weight: 800; letter-spacing: -.5px;
+    color: #e8ebf5; font-variant-numeric: tabular-nums; line-height: 1; }
+  .g-time .s { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: #8b95ad;
+    margin-left: 6px; vertical-align: 4px; }
+  .g-time.low { color: #ff9b9b; }
+  .g-time.low .s { color: #d47b7b; }
+
+  /* --- game-over card --- */
+  .over { position: fixed; z-index: 7; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: min(400px, calc(100vw - 32px)); text-align: center;
+    background: rgba(13, 16, 28, .94); border: 1px solid #2a3149; border-radius: 16px;
+    padding: 24px 26px 20px; backdrop-filter: blur(6px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .6); }
+  .over-title { color: #8b7bff; font-size: 13px; font-weight: 800; letter-spacing: 3px;
+    text-transform: uppercase; }
+  .over-score { color: #fff; font-size: 26px; font-weight: 700; margin-top: 6px; }
+  .over-score b { font-size: 34px; color: #7be3a3; margin-right: 4px; }
+  .over-sub { color: #8b95ad; font-size: 12.5px; margin-top: 6px; }
+  .over-sub b { color: #e8ebf5; }
+  .over-actions { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+  .over-btn { padding: 10px 18px; border-radius: 10px; cursor: pointer;
+    background: rgba(109, 94, 242, .12); border: 1px solid #3a4162; color: #e8ebf5;
+    font-size: 13.5px; font-weight: 700; transition: background .15s, border-color .15s; }
+  .over-btn:hover { background: rgba(109, 94, 242, .28); border-color: #6d5ef2; }
+  .over-btn.primary { background: #6d5ef2; border-color: #6d5ef2; color: #fff; }
+  .over-btn.primary:hover { background: #7d6ffd; }
+  .over-btn.copied { background: rgba(123, 227, 163, .18); border-color: #2c5a3f; color: #7be3a3; }
+  .over-shares { color: #6b7590; font-size: 11.5px; margin-top: 12px; }
+  .over-shares a { color: #8b7bff; text-decoration: none; }
+  .over-shares a:hover { color: #a99df7; text-decoration: underline; }
+  .over-close { display: block; margin: 14px auto 0; background: none; border: none;
+    color: #5b657d; font-size: 11.5px; cursor: pointer; letter-spacing: .3px; }
+  .over-close:hover { color: #cfd6ee; }
+
+  /* --- focus card: decorative Object-Manager groupings --- */
+  #focus { width: 258px; } /* widen slightly to fit count pill */
+  .fsecs { margin-top: 12px; border-top: 1px solid #1c2136; padding-top: 6px; }
+  .fsec { display: flex; align-items: center; gap: 8px; padding: 6px 2px;
+    border-bottom: 1px solid #141828; }
+  .fsec:last-child { border-bottom: none; }
+  .fsec .car { color: #5b657d; font-size: 9px; width: 9px; flex: none; }
+  .fsec .nm { color: #e8ebf5; font-size: 12px; font-weight: 600; flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fsec .cnt { color: #8b95ad; font-size: 10.5px; background: #171c2d;
+    border-radius: 20px; padding: 1px 8px; min-width: 18px; text-align: center; }
+  .fsec.empty { opacity: .5; }
+  .fsec.empty .nm { color: #8b95ad; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -145,6 +194,7 @@
     <button id="gEnd" class="g-end" title="End game">✕</button>
     <div class="g-call">Marco!</div>
     <div class="g-target">Find <b id="gName"></b></div>
+    <div class="g-time" id="gTimeWrap"><span id="gTime">60.0</span><span class="s">s left</span></div>
     <div class="g-stats"><span id="gScore">Found 0</span> · <span id="gStreak">streak 0</span>
       · <span id="gBest">best 0</span></div>
     <div class="g-hint" id="gHint"></div>
@@ -152,12 +202,29 @@
   <div id="hoverLabel" class="hoverlabel" hidden></div>
   <div id="gToast" class="gtoast" hidden></div>
 
+  <!-- game-over card -->
+  <div id="over" class="over" hidden>
+    <div class="over-title">⏱ Time!</div>
+    <div class="over-score">You found <b id="oScore">0</b> object<span id="oPlural">s</span></div>
+    <div class="over-sub">best streak <b id="oStreak">0</b> · best run <b id="oBest">0</b></div>
+    <div class="over-actions">
+      <button id="oAgain" class="over-btn primary">↻ Play again</button>
+      <button id="oShare" class="over-btn">↗ Share my streak</button>
+    </div>
+    <div id="oShareLinks" class="over-shares" hidden>
+      or post on <a id="oShareX" target="_blank" rel="noopener">X</a> ·
+      <a id="oShareReddit" target="_blank" rel="noopener">Reddit</a> ·
+      <a id="oShareLI" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+    <button id="oClose" class="over-close">back to teaser</button>
+  </div>
+
   <aside id="focus">
     <button class="close" title="Close">✕</button>
     <h3 id="fName"></h3>
     <div class="sub" id="fSub"></div>
-    <div class="body" id="fBody"></div>
-    <span class="tease">Nothing here leaves your browser. That's the whole point.</span>
+    <div class="fsecs" id="fSections"></div>
+    <span class="tease">Every field, rule, and trigger — one click away. Nothing leaves your browser.</span>
   </aside>
 
   <footer>
@@ -167,6 +234,6 @@
 
   <script src="assets/vendor/three-r128.min.js"></script>
   <!-- bump ?v= whenever teaser-sim.js changes so browsers pick it up. -->
-  <script src="assets/teaser-sim.js?v=8"></script>
+  <script src="assets/teaser-sim.js?v=9"></script>
 </body>
 </html>

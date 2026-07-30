@@ -343,22 +343,61 @@
   canvas.addEventListener("pointerleave", () => { pointerActive = false; });
 
   // --- focus card --------------------------------------------------------
-  // Faux data — evocative but obviously synthetic (24, 6, 3 for standard;
-  // scales with degree).
-  const FOCUS_COPY = {
-    std:    { chip: "standard", body: (n) => `<b>${18 + n.deg * 3} fields</b> · <b>${Math.max(2, n.deg - 4)} validation rules</b> · <b>${Math.max(1, Math.round(n.deg / 2))} flows</b> touch it.` },
-    custom: { chip: "custom", body: (n) => `Unmanaged custom object. <b>${8 + n.deg * 2} fields</b>, <b>${n.deg + 1}</b> relationships. Marco reveals every one.` },
-    cpq:    { chip: "CPQ Extended Suite", body: (n) => `Managed-package object. Marco walks its dependencies without leaving your browser.` },
-    fsl:    { chip: "Field Service Lightning", body: (n) => `Managed-package object. See every reference across your org.` },
-    inv:    { chip: "Inventory", body: (n) => `Custom object with <b>${n.deg + 1}</b> visible relationships.` },
-    mdt:    { chip: "Custom Metadata Type", body: (n) => `Config record. Referenced by <b>${1 + n.deg}</b> flows and formulas.` }
+  // Decorative Object-Manager groupings mirroring real Marco's 3D left detail
+  // card. Counts come from a seeded RNG on node.id so they're stable per
+  // object — click the same star twice and the numbers match. Purely visual
+  // (no click handlers on the rows); the carets never open.
+  const GROUP_CHIP = {
+    std: "standard", custom: "custom", cpq: "CPQ Extended Suite",
+    fsl: "Field Service Lightning", inv: "Inventory", mdt: "Custom Metadata Type"
   };
+  // [key, min, max] — plausible Salesforce-ish ranges, tuned so a few land at 0
+  // and the card looks like a real org's mix.
+  const SECTIONS = [
+    ["Fields",             8, 60],
+    ["Validation Rules",   0,  6],
+    ["Record Types",       0,  4],
+    ["Field Sets",         0,  3],
+    ["Compact Layouts",    1,  4],
+    ["Page Layouts",       1,  5],
+    ["Buttons & Links",    0,  6],
+    ["Apex Triggers",      0,  2],
+    ["Flow Triggers",      0,  5]
+  ];
+  // Deterministic PRNG (mulberry32) seeded from a hash of node.id.
+  function seedFor(id) {
+    let h = 2166136261;
+    for (let i = 0; i < id.length; i++) { h ^= id.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function mulberry32(a) {
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function sectionCounts(n) {
+    const rnd = mulberry32(seedFor(n.id));
+    // Fields scales with the object's importance (degree), tacked onto the RNG.
+    return SECTIONS.map(([name, lo, hi], i) => {
+      const base = lo + Math.floor(rnd() * (hi - lo + 1));
+      const bump = i === 0 ? Math.min(30, n.deg * 3) : 0; // Fields boost
+      return { name, cnt: base + bump };
+    });
+  }
   const $ = (id) => document.getElementById(id);
   function focusOn(n) {
-    const c = FOCUS_COPY[n.grp];
     $("fName").textContent = n.id;
-    $("fSub").innerHTML = `<span class="chip">${c.chip}</span>${n.deg} relationships`;
-    $("fBody").innerHTML = c.body(n);
+    $("fSub").innerHTML = `<span class="chip">${GROUP_CHIP[n.grp]}</span>${n.deg} relationships`;
+    $("fSections").innerHTML = sectionCounts(n).map((s) =>
+      `<div class="fsec${s.cnt === 0 ? " empty" : ""}">` +
+        `<span class="car">▸</span>` +
+        `<span class="nm">${s.name}</span>` +
+        `<span class="cnt">${s.cnt}</span>` +
+      `</div>`
+    ).join("");
     $("focus").classList.add("on");
     // fly camera to that node
     target.copy(n.pos); camDist = 55;
@@ -379,19 +418,28 @@
   // A round names a target; hover stars to read names, click the target to
   // score. No help for the first HINT1 seconds, then the target's galaxy is
   // spotlit (others dimmed), then the target itself pulses.
-  const HINT1 = 6, HINT2 = 12; // seconds
+  const HINT1 = 6, HINT2 = 12; // seconds — per-target hint escalation
+  const GAME_SECONDS = 60;      // beat-the-clock round length
   const game = {
     on: false, target: null, score: 0, streak: 0,
     best: +(localStorage.getItem("marcoGameBest") || 0),
+    bestScore: +(localStorage.getItem("marcoGameBestScore") || 0),
     roundT: 0, hovered: null, hintLevel: 0,
+    startedT: 0, // wall-clock start of this run
     el: $("game"), name: $("gName"), scoreEl: $("gScore"),
     streakEl: $("gStreak"), bestEl: $("gBest"), hintEl: $("gHint"),
+    timeEl: $("gTime"), timeWrap: $("gTimeWrap"),
     label: $("hoverLabel"), toastEl: $("gToast"),
+    over: $("over"),
 
     start() {
       this.on = true; this.score = 0; this.streak = 0;
+      this.startedT = performance.now();
+      this.timeEl.textContent = GAME_SECONDS.toFixed(1);
+      this.timeWrap.classList.remove("low");
       document.body.classList.add("gaming");
       this.el.hidden = false;
+      this.over.hidden = true;
       clearFocus();
       autoRotate = false; target.copy(homeTarget); camDist = homeDist; updateCamera();
       this.next(); this.hud();
@@ -400,7 +448,27 @@
       this.on = false;
       document.body.classList.remove("gaming");
       this.el.hidden = true; this.label.hidden = true; this.hovered = null;
+      this.over.hidden = true;
       autoRotate = true; target.copy(homeTarget); camDist = homeDist;
+    },
+    timeUp() {
+      // Freeze the round; the game-over card pops with stats + share.
+      this.on = false;
+      this.label.hidden = true; this.hovered = null;
+      if (this.score > this.bestScore) {
+        this.bestScore = this.score;
+        localStorage.setItem("marcoGameBestScore", this.bestScore);
+      }
+      $("oScore").textContent = this.score;
+      $("oPlural").textContent = this.score === 1 ? "" : "s";
+      $("oStreak").textContent = this.best;   // best streak (all-time)
+      $("oBest").textContent = this.bestScore; // best score (all-time)
+      // Reset any prior "Copied ✓" state on the share button.
+      const sb = $("oShare");
+      sb.classList.remove("copied");
+      sb.textContent = "↗ Share my streak";
+      $("oShareLinks").hidden = true;
+      this.over.hidden = false;
     },
     next() {
       let t = this.target;
@@ -439,6 +507,42 @@
       this._tt = setTimeout(() => { el.className = "gtoast " + kind; }, 650);
     }
   };
+
+  // --- share: native share sheet on mobile/supported; clipboard + compose
+  // links elsewhere. LinkedIn/X/Reddit are all supported in the fallback.
+  const TEASER_URL = "https://creedysolutions.github.io/marco-site/teaser.html";
+  function bragText() {
+    const s = game.score, streak = game.best;
+    return `I found ${s} object${s === 1 ? "" : "s"} in Marco's 3D Salesforce galaxy (best streak ${streak}). Think you can beat me? ${TEASER_URL}`;
+  }
+  async function share() {
+    const btn = $("oShare");
+    const text = bragText();
+    // Native share sheet (mobile + Chrome/Edge desktop where supported).
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Marco — Where Used for Salesforce", text, url: TEASER_URL });
+        return;
+      } catch (_) { /* user cancelled — fall through so they can still copy */ }
+    }
+    // Clipboard fallback + reveal the per-network compose links.
+    try { await navigator.clipboard.writeText(text); } catch (_) { /* best-effort */ }
+    btn.textContent = "Copied ✓";
+    btn.classList.add("copied");
+    // Compose URLs — each opens the platform's share dialog with the URL prefilled.
+    $("oShareX").href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    $("oShareReddit").href = `https://www.reddit.com/submit?title=${encodeURIComponent("Marco — a 3D Salesforce galaxy game")}&url=${encodeURIComponent(TEASER_URL)}`;
+    $("oShareLI").href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(TEASER_URL)}`;
+    $("oShareLinks").hidden = false;
+    clearTimeout(share._t);
+    share._t = setTimeout(() => {
+      btn.textContent = "↗ Share my streak";
+      btn.classList.remove("copied");
+    }, 2500);
+  }
+  $("oAgain").addEventListener("click", () => game.start());
+  $("oClose").addEventListener("click", () => game.end());
+  $("oShare").addEventListener("click", share);
   const GROUP_LABEL = { std: "slate", custom: "purple", cpq: "gold", fsl: "green", inv: "cyan", mdt: "pink" };
   $("playBtn").addEventListener("click", () => game.start());
   $("gEnd").addEventListener("click", () => game.end());
@@ -464,9 +568,16 @@
       if (ripples[i].t * RIPPLE_SPEED > RIPPLE_MAX) ripples.splice(i, 1);
     }
 
-    // Game: hint escalation + hover-to-read-name tooltip.
+    // Game: countdown timer + hint escalation + hover-to-read-name tooltip.
     let gTargetGrp = null; // non-null once we spotlight the target's galaxy
     if (game.on && game.target) {
+      // Countdown — clamp to 0, flash red under 10s, hand off to timeUp() at 0.
+      const remaining = Math.max(0, GAME_SECONDS - (now - game.startedT) / 1000);
+      game.timeEl.textContent = remaining.toFixed(1);
+      if (remaining < 10) game.timeWrap.classList.add("low");
+      else game.timeWrap.classList.remove("low");
+      if (remaining <= 0) { game.timeUp(); return requestAnimationFrame(loop); }
+
       const el = (now - game.roundT) / 1000;
       const lvl = el >= HINT2 ? 2 : el >= HINT1 ? 1 : 0;
       if (lvl !== game.hintLevel) {
