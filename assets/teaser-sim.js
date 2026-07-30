@@ -188,21 +188,29 @@
     m.position.copy(n.pos);
     m.scale.setScalar(r);
     m.userData.node = n;
+    // Reaction bookkeeping: the layout rest state stars spring back toward.
+    m.userData.base = n.pos.clone();
+    m.userData.baseScale = r;
+    m.userData.baseEmissive = 0.55;
     scene.add(m);
     return m;
   });
+  const meshOf = new Map(nodes.map((n, i) => [n.id, meshes[i]]));
 
-  // links as lines. MD edges get their own bright gold material.
+  // links as lines. MD edges get their own bright gold material. Each line
+  // keeps refs to its two meshes so it can follow them as they ripple.
   const lineMat = new THREE.LineBasicMaterial({
     color: 0x3a4266, transparent: true, opacity: 0.55
   });
   const mdMat = new THREE.LineBasicMaterial({
     color: 0xd48a3a, transparent: true, opacity: 0.85
   });
+  const lineRecords = [];
   for (const [s, t] of links) {
-    const a = byId.get(s).pos, b = byId.get(t).pos;
-    const g = new THREE.BufferGeometry().setFromPoints([a, b]);
-    scene.add(new THREE.Line(g, MD.has(`${s}|${t}`) ? mdMat : lineMat));
+    const ma = meshOf.get(s), mb = meshOf.get(t);
+    const geo = new THREE.BufferGeometry().setFromPoints([ma.position, mb.position]);
+    scene.add(new THREE.Line(geo, MD.has(`${s}|${t}`) ? mdMat : lineMat));
+    lineRecords.push({ geo, a: ma, b: mb });
   }
 
   // --- camera framing ----------------------------------------------------
@@ -276,6 +284,51 @@
     renderer.setSize(innerWidth, innerHeight);
   });
 
+  // --- mouse reaction: hover field + ripple bursts -----------------------
+  // A cursor ray projected onto a plane through the galaxy center gives a
+  // world point. Stars near it glow, swell, and get gently pushed (the
+  // hover field). Fast mouse movement spawns expanding ripple shells that
+  // pulse stars as they pass through — the "the galaxy notices you" feel.
+  const HOVER_RADIUS = 34, HOVER_PUSH = 4, HOVER_GLOW = 1.15, HOVER_SCALE = 0.24;
+  const RIPPLE_SPEED = 60, RIPPLE_WIDTH = 15, RIPPLE_MAX = 95;
+  const RIPPLE_PUSH = 5, RIPPLE_GLOW = 1.5, RIPPLE_SCALE = 0.34;
+  const EASE = 0.16;
+  const ripples = []; // { o: Vector3 origin, t: seconds alive }
+
+  let pointerActive = false, pNdcX = 0, pNdcY = 0;
+  let lastPx = 0, lastPy = 0, movedSinceRipple = 0, lastRippleT = 0;
+
+  const _plane = new THREE.Plane();
+  const _rcH = new THREE.Raycaster();
+  const _fwd = new THREE.Vector3();
+  function pointAt(nx, ny) {
+    camera.getWorldDirection(_fwd);
+    _plane.setFromNormalAndCoplanarPoint(_fwd, homeTarget); // galaxy-center plane
+    _rcH.setFromCamera({ x: nx, y: ny }, camera);
+    const out = new THREE.Vector3();
+    return _rcH.ray.intersectPlane(_plane, out) ? out : null;
+  }
+
+  // Separate from the drag-orbit pointermove above; this one always tracks.
+  canvas.addEventListener("pointermove", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    pNdcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    pNdcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    pointerActive = true;
+    const dpx = Math.hypot(e.clientX - lastPx, e.clientY - lastPy);
+    lastPx = e.clientX; lastPy = e.clientY;
+    if (!dragging) {
+      movedSinceRipple += dpx;
+      const now = performance.now();
+      if (movedSinceRipple > 70 && now - lastRippleT > 90) {
+        const p = pointAt(pNdcX, pNdcY);
+        if (p) { ripples.push({ o: p, t: 0 }); if (ripples.length > 6) ripples.shift(); }
+        movedSinceRipple = 0; lastRippleT = now;
+      }
+    }
+  });
+  canvas.addEventListener("pointerleave", () => { pointerActive = false; });
+
   // --- focus card --------------------------------------------------------
   // Faux data — evocative but obviously synthetic (24, 6, 3 for standard;
   // scales with degree).
@@ -309,9 +362,72 @@
   }
   document.querySelector("#focus .close").addEventListener("click", clearFocus);
 
-  // --- animate: slow autorotate until user touches ----------------------
+  // --- animate: autorotate + mouse-reaction physics + line-follow --------
+  const _disp = new THREE.Vector3(), _dir = new THREE.Vector3();
+  let lastFrame = performance.now();
   function loop() {
-    if (autoRotate) { yaw += 0.0018; updateCamera(); }
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - lastFrame) / 1000); // clamp tab-switch jumps
+    lastFrame = now;
+
+    if (autoRotate) yaw += 0.0018;
+    updateCamera(); // keep camera current so the hover ray is accurate
+
+    // Hover point tracks the cursor even while the galaxy rotates.
+    const hoverPoint = pointerActive ? pointAt(pNdcX, pNdcY) : null;
+
+    // Age ripples; cull once the shell has expanded past the galaxy.
+    for (const r of ripples) r.t += dt;
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      if (ripples[i].t * RIPPLE_SPEED > RIPPLE_MAX) ripples.splice(i, 1);
+    }
+
+    for (const m of meshes) {
+      const base = m.userData.base;
+      _disp.set(0, 0, 0);
+      let glow = 0, scaleB = 0;
+
+      if (hoverPoint) {
+        const d = base.distanceTo(hoverPoint);
+        if (d < HOVER_RADIUS) {
+          const f = 1 - d / HOVER_RADIUS, ff = f * f; // soft falloff
+          _dir.copy(base).sub(hoverPoint);
+          if (_dir.lengthSq() < 1e-4) _dir.set(0, 1, 0);
+          _dir.normalize();
+          _disp.addScaledVector(_dir, ff * HOVER_PUSH);
+          glow += ff * HOVER_GLOW; scaleB += ff * HOVER_SCALE;
+        }
+      }
+      for (const r of ripples) {
+        const shell = r.t * RIPPLE_SPEED;
+        const dd = Math.abs(base.distanceTo(r.o) - shell);
+        if (dd < RIPPLE_WIDTH) {
+          const fade = 1 - shell / RIPPLE_MAX;               // weaker as it expands
+          const f = (1 - dd / RIPPLE_WIDTH) * fade;
+          _dir.copy(base).sub(r.o);
+          if (_dir.lengthSq() < 1e-4) _dir.set(0, 1, 0);
+          _dir.normalize();
+          _disp.addScaledVector(_dir, f * RIPPLE_PUSH);
+          glow += f * RIPPLE_GLOW; scaleB += f * RIPPLE_SCALE;
+        }
+      }
+
+      // Ease toward rest+displacement, glow, and scale — springs back on its own.
+      m.position.lerp(_disp.add(base), EASE);
+      const be = m.userData.baseEmissive, bs = m.userData.baseScale;
+      m.material.emissiveIntensity += ((be + glow) - m.material.emissiveIntensity) * EASE;
+      const sc = bs * (1 + scaleB);
+      m.scale.setScalar(m.scale.x + (sc - m.scale.x) * EASE);
+    }
+
+    // Lines follow their (now-jiggling) endpoints so the whole web ripples.
+    for (const rec of lineRecords) {
+      const p = rec.geo.attributes.position.array;
+      p[0] = rec.a.position.x; p[1] = rec.a.position.y; p[2] = rec.a.position.z;
+      p[3] = rec.b.position.x; p[4] = rec.b.position.y; p[5] = rec.b.position.z;
+      rec.geo.attributes.position.needsUpdate = true;
+    }
+
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   }
