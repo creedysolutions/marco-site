@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!-- Mirrors docs/privacy-policy.md in the Marco repo — keep the two in sync. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Marco — Where Used for Salesforce</title>
+<meta name="description" content="Marco collects no personal data and transmits no org metadata anywhere. All queries run from your browser to your own Salesforce org.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+  :root { --bg: #05060e; --panel: #10142a; --line: #232946; --ink: #e8ebf5;
+    --ink-soft: #9aa4bd; --dim: #6b7590; --accent-2: #8b7bff; --green: #7be3a3; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 56px 24px 80px; }
+  .back { font-size: 14px; }
+  h1 { font-size: 34px; font-weight: 800; letter-spacing: -.5px; margin: 18px 0 4px; }
+  .meta { color: var(--dim); font-size: 14px; margin-bottom: 30px; }
+  .short { background: var(--panel); border: 1px solid #2c5a3f; border-radius: 14px;
+    padding: 22px 26px; margin: 26px 0 8px; }
+  .short b { color: var(--green); }
+  h2 { font-size: 21px; font-weight: 700; margin: 38px 0 10px; }
+  p, li { color: var(--ink-soft); }
+  p b, li b { color: var(--ink); }
+  ul { padding-left: 22px; margin: 10px 0; }
+  li { margin: 7px 0; }
+  code { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+    padding: 1px 6px; font-size: 14px; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Marco</a>
+  <h1>Privacy Policy</h1>
+  <div class="meta"><b>Marco — Where Used for Salesforce</b> · Effective date: July 2026 ·
+    Contact: <a href="mailto:creedysolutions@gmail.com">creedysolutions@gmail.com</a></div>
+
+  <p>Marco is a Google Chrome extension that helps Salesforce administrators and
+  developers see where components (fields, flows, Apex classes, layouts, validation
+  rules, LWCs, and others) are used across their org's metadata.</p>
+
+  <div class="short"><b>Short version:</b> Marco does not collect any personal data.
+  Marco does not transmit your Salesforce org's metadata to any server operated by us,
+  or to any third party. All queries run inside your browser, from your browser
+  directly to your own Salesforce org's APIs. All caches are stored locally on your
+  device.</div>
+
+  <h2>What Marco reads, and from where</h2>
+  <ul>
+    <li><b>Your Salesforce session cookie (<code>sid</code>)</b> — for the Salesforce
+      origin of the tab you are currently on. Marco uses this cookie value to
+      authenticate its API requests <b>as you</b>, against <b>your</b> Salesforce org.
+      This is the same session-reuse pattern used by tools like Salesforce Inspector.
+      The cookie value is never transmitted anywhere except back to that same
+      Salesforce org.</li>
+    <li><b>Salesforce metadata</b> — component names, dependencies, page layouts,
+      validation-rule formulas, flow definitions, field permissions, object
+      permissions, and object/relationship (schema) definitions used to draw the 3D
+      schema map — read via the Salesforce Tooling API and REST API. This metadata is
+      displayed to you in the Marco side panel and Universe view and cached locally
+      for performance.</li>
+  </ul>
+
+  <h2>What Marco can change in your org (at your explicit request only)</h2>
+  <p>Marco can update the <b>description text</b> of custom fields, flows, and
+  validation rules in your org — and nothing else — when you type a description and
+  click “Save &amp; deploy” in the panel. These writes:</p>
+  <ul>
+    <li>go directly from your browser to <b>your own Salesforce org's API</b>, using
+      your own session and permissions — never through any other server;</li>
+    <li>are only possible in <b>sandbox, scratch, and Developer Edition orgs</b>
+      (production orgs are always read-only in Marco), and only if your user has the
+      “Customize Application” permission;</li>
+    <li>change only the description attribute; Marco verifies after each save that
+      nothing else was modified.</li>
+  </ul>
+  <p>Marco never changes anything in your org on its own.</p>
+
+  <h2>What Marco stores, and where</h2>
+  <ul>
+    <li><b>IndexedDB (in your browser)</b> — cached dependency results and per-org
+      flow indexes, so repeat queries are instant. One database per Salesforce org ID.
+      Nothing here is synced across devices.</li>
+    <li><b><code>chrome.storage.local</code> (in your browser)</b> — user settings
+      only, such as the per-org overlay toggle and whether you've seen the first-run
+      tour.</li>
+    <li><b>Page-local storage (<code>localStorage</code>, in your browser)</b> — view
+      preferences for the Universe page, such as which galaxies you've hidden.</li>
+  </ul>
+  <p>Nothing Marco writes leaves your device.</p>
+
+  <h2>What Marco does NOT do</h2>
+  <ul>
+    <li>Marco has <b>no user accounts</b>. You never create an account with us and
+      never provide us with a username or password.</li>
+    <li>Marco has <b>no analytics, telemetry, or tracking</b>. We do not know when you
+      install, open, or use the extension, and we do not want to.</li>
+    <li>Marco has <b>no advertising</b>. We do not sell or transfer data to third
+      parties.</li>
+    <li>Marco does <b>not fetch or execute remote code</b>. All JavaScript ships with
+      the extension and is reviewed by the Chrome Web Store.</li>
+  </ul>
+
+  <h2>Third-party services</h2>
+  <p>Marco makes network requests to only one destination: <b>your own Salesforce
+  org's domain</b> (<code>*.salesforce.com</code>, <code>*.force.com</code>,
+  <code>*.salesforce-setup.com</code>). Marco does not contact any server operated by
+  us, or by any third party.</p>
+
+  <h2>Future opt-in AI features (not in the current beta)</h2>
+  <p>Future paid versions of Marco may offer an opt-in “Ask Marco” feature that uses
+  Anthropic's Claude API. If you choose to enable it, you provide your own Anthropic
+  API key. Your questions and the minimal context Marco packs around them are sent
+  from your browser directly to Anthropic (<code>api.anthropic.com</code>) using
+  <b>your</b> key. This feature is off by default and does not exist in the current
+  beta.</p>
+
+  <h2>Chrome permission usage</h2>
+  <ul>
+    <li><code>sidePanel</code> — draws Marco's UI as a side panel.</li>
+    <li><code>storage</code> — stores user settings locally.</li>
+    <li><code>cookies</code> — reads the Salesforce session cookie, as described above
+      (used for reads and, in developer/sandbox orgs at your request, description
+      updates).</li>
+    <li><code>contextMenus</code> — adds a “Marco: inspect this component” right-click
+      item on Salesforce Setup pages.</li>
+    <li><code>tabs</code> — knows which tab you are looking at, so it queries the
+      right org.</li>
+    <li><b>Host permissions</b> — <code>*.salesforce.com</code>,
+      <code>*.force.com</code>, <code>*.salesforce-setup.com</code> — the only domains
+      Marco is allowed to talk to.</li>
+  </ul>
+
+  <h2>Changes</h2>
+  <p>If this policy materially changes, we will update the effective date at the top
+  and note the change in the Marco release notes.</p>
+
+  <h2>Contact</h2>
+  <p>Questions: <a href="mailto:creedysolutions@gmail.com">creedysolutions@gmail.com</a></p>
+</div>
+</body>
+</html>

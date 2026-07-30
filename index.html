@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<!-- Copyright (c) 2026 Creedy Solutions LLC. Site source: github.com/creedysolutions/marco-site -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marco — Where Used for Salesforce</title>
+<meta name="description" content="Click any component in Salesforce Setup and see everywhere it's used — flows, Apex, layouts, validation rules — plus your whole org schema as a navigable 3D universe. Your metadata never leaves your browser.">
+<meta property="og:title" content="Marco — Where Used for Salesforce">
+<meta property="og:description" content="Marco. Polo. Found. See everywhere any Salesforce component is used — instantly, privately, in your browser.">
+<meta property="og:image" content="https://creedysolutions.github.io/marco-site/assets/og-image.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+  :root {
+    --bg: #05060e; --bg2: #0a0d1c; --panel: #10142a; --line: #232946;
+    --ink: #e8ebf5; --ink-soft: #9aa4bd; --dim: #6b7590;
+    --accent: #6d5ef2; --accent-2: #8b7bff; --brand: #4338ca;
+    --green: #7be3a3; --gold: #f0b95c; --cyan: #79d2e6; --lav: #a99df7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
+
+  /* hero */
+  header { position: relative; overflow: hidden;
+    background: radial-gradient(90% 120% at 70% 20%, #121736 0%, var(--bg2) 50%, var(--bg) 100%); }
+  .stars { position: absolute; inset: 0; pointer-events: none; }
+  .hero { position: relative; padding: 88px 0 64px; text-align: center; }
+  .mark { width: 76px; height: 76px; border-radius: 20px; background: var(--brand);
+    position: relative; margin: 0 auto 26px; box-shadow: 0 0 54px rgba(109, 94, 242, .5); }
+  .mark::before { content: ""; position: absolute; left: 18px; top: 20px;
+    width: 40px; height: 12px; background: #fff; border-radius: 6px; }
+  .mark::after { content: ""; position: absolute; left: 18px; top: 20px;
+    width: 12px; height: 36px; background: #fff; border-radius: 6px; }
+  h1 { font-size: 58px; font-weight: 800; letter-spacing: -1px; }
+  .tagline { font-size: 24px; color: var(--ink-soft); font-weight: 600; margin-top: 8px; }
+  .polo { color: var(--accent-2); font-size: 14px; font-weight: 700;
+    letter-spacing: 2.4px; text-transform: uppercase; margin-top: 16px; }
+  .sub { max-width: 640px; margin: 22px auto 0; color: var(--ink-soft); font-size: 18px; }
+  .sub b { color: var(--ink); }
+  .cta { margin-top: 34px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 13px 26px; border-radius: 12px; font-weight: 700;
+    font-size: 15.5px; border: 1px solid var(--line); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-2); text-decoration: none; }
+  .btn.ghost { color: var(--ink); }
+  .btn.ghost:hover { border-color: var(--accent); text-decoration: none; }
+  .beta-note { margin-top: 14px; color: var(--dim); font-size: 13px; }
+
+  /* screenshots */
+  .shots { position: relative; padding: 10px 0 70px; }
+  .shots .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .shot { border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    background: var(--panel); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot figcaption { padding: 12px 16px; color: var(--ink-soft); font-size: 13.5px;
+    border-top: 1px solid var(--line); }
+  @media (max-width: 760px) { .shots .wrap { grid-template-columns: 1fr; } h1 { font-size: 42px; } }
+
+  /* features */
+  section { padding: 70px 0; }
+  section.alt { background: var(--bg2); }
+  h2 { font-size: 32px; font-weight: 800; letter-spacing: -.4px; text-align: center; }
+  .lead { text-align: center; color: var(--ink-soft); max-width: 620px; margin: 12px auto 0; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px; }
+  .card .ico { font-size: 22px; }
+  .card h3 { font-size: 17px; margin: 10px 0 6px; }
+  .card p { color: var(--ink-soft); font-size: 14.5px; }
+  .card p b { color: var(--ink); }
+
+  /* privacy */
+  .privacy-box { max-width: 780px; margin: 40px auto 0; background: var(--panel);
+    border: 1px solid #2c5a3f; border-radius: 16px; padding: 30px 34px; }
+  .privacy-box h3 { color: var(--green); font-size: 19px; margin-bottom: 12px; }
+  .privacy-box ul { list-style: none; }
+  .privacy-box li { padding: 7px 0 7px 28px; position: relative; color: var(--ink-soft); }
+  .privacy-box li::before { content: "✓"; position: absolute; left: 2px; color: var(--green);
+    font-weight: 800; }
+  .privacy-box li b { color: var(--ink); }
+  .privacy-more { text-align: center; margin-top: 22px; }
+
+  /* pricing */
+  .price-row { display: flex; gap: 18px; justify-content: center; margin-top: 40px; flex-wrap: wrap; }
+  .price { background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 26px 30px; width: 280px; }
+  .price.hot { border-color: var(--accent); }
+  .price h3 { font-size: 15px; text-transform: uppercase; letter-spacing: 1.4px;
+    color: var(--ink-soft); }
+  .price .amt { font-size: 34px; font-weight: 800; margin: 8px 0 2px; }
+  .price .per { color: var(--dim); font-size: 13px; }
+  .price ul { list-style: none; margin-top: 14px; }
+  .price li { color: var(--ink-soft); font-size: 14px; padding: 4px 0; }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 44px; color: var(--dim);
+    font-size: 13.5px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  footer .legal { max-width: 560px; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="stars" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1400 700">
+    <g stroke="#3a4266" stroke-width="0.8" opacity="0.35">
+      <line x1="180" y1="120" x2="285" y2="185"/><line x1="285" y1="185" x2="220" y2="270"/>
+      <line x1="220" y1="270" x2="180" y2="120"/><line x1="285" y1="185" x2="380" y2="150"/>
+      <line x1="1105" y1="170" x2="1188" y2="272"/><line x1="1188" y1="272" x2="1105" y2="365"/>
+      <line x1="1105" y1="365" x2="1020" y2="300"/><line x1="1020" y1="300" x2="1105" y2="170"/>
+      <line x1="1188" y1="272" x2="1290" y2="230"/><line x1="1105" y1="365" x2="1210" y2="440"/>
+      <line x1="120" y1="420" x2="220" y2="270"/><line x1="180" y1="560" x2="120" y2="420"/>
+    </g>
+    <g fill="#aeb8d6" opacity="0.85">
+      <circle cx="180" cy="120" r="4.5"/><circle cx="285" cy="185" r="6"/><circle cx="220" cy="270" r="7.5"/>
+      <circle cx="120" cy="420" r="4"/><circle cx="1020" cy="300" r="6.5"/><circle cx="1105" cy="170" r="5"/>
+    </g>
+    <g fill="#7be3a3" opacity="0.9"><circle cx="380" cy="150" r="4"/><circle cx="1188" cy="272" r="5"/></g>
+    <g fill="#f0b95c" opacity="0.9"><circle cx="1105" cy="365" r="5.5"/><circle cx="180" cy="560" r="3.6"/></g>
+    <g fill="#79d2e6" opacity="0.9"><circle cx="1290" cy="230" r="3.8"/><circle cx="90" cy="220" r="3"/></g>
+    <g fill="#a99df7" opacity="0.9"><circle cx="1210" cy="440" r="4.2"/><circle cx="320" cy="60" r="2.8"/></g>
+    <g fill="#5b657d" opacity="0.5">
+      <circle cx="500" cy="80" r="1.4"/><circle cx="700" cy="40" r="1.2"/><circle cx="900" cy="90" r="1.4"/>
+      <circle cx="1340" cy="120" r="1.3"/><circle cx="60" cy="80" r="1.2"/><circle cx="1360" cy="520" r="1.4"/>
+      <circle cx="420" cy="600" r="1.2"/><circle cx="1000" cy="580" r="1.3"/><circle cx="620" cy="660" r="1.2"/>
+    </g>
+  </svg>
+  <div class="hero wrap">
+    <div class="mark" role="img" aria-label="Marco logo"></div>
+    <h1>Marco</h1>
+    <div class="tagline">Where Used for Salesforce</div>
+    <div class="polo">Marco. Polo. Found.</div>
+    <p class="sub">Click any component in Setup — a field, flow, Apex class, or layout —
+      and Marco shows <b>everywhere it's used</b>, both directions, in a side panel.
+      Then step back and explore your <b>entire org schema as a 3D universe</b>.</p>
+    <div class="cta">
+      <a class="btn primary" href="mailto:creedysolutions@gmail.com?subject=Marco%20beta%20access">Join the beta</a>
+      <a class="btn ghost" href="#features">What it does</a>
+    </div>
+    <div class="beta-note">Currently in private beta on the Chrome Web Store — beta access is free.</div>
+  </div>
+</header>
+
+<div class="shots">
+  <div class="wrap">
+    <figure class="shot">
+      <img src="assets/universe.png" alt="Marco's Universe view: an org's schema as a 3D galaxy, with an Object Manager-style detail card and a relationships card for the focused object" loading="lazy">
+      <figcaption><b>Explore in 3D</b> — every object a star, every relationship a line, each managed package its own galaxy.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/overlay.png" alt="A Salesforce record page with Marco's API-name overlay chips under each field, and the Marco side panel showing a custom field's dependency graph" loading="lazy">
+      <figcaption><b>API names on every field</b> — one toggle, every label chip is clickable, straight into the dependency graph.</figcaption>
+    </figure>
+  </div>
+</div>
+
+<section id="features" class="alt">
+  <div class="wrap">
+    <h2>The question it answers: “if I change this, what breaks?”</h2>
+    <p class="lead">Marco is built for Salesforce admins, architects, and developers who
+      are tired of clicking through Setup to reverse-engineer their own org.</p>
+    <div class="grid">
+      <div class="card"><div class="ico">🕸️</div><h3>Dependency graph</h3>
+        <p>Uses on one side, used-by on the other. Click any node to re-walk the graph
+          from there — breadcrumbs bring you back.</p></div>
+      <div class="card"><div class="ico">🌌</div><h3>Explore in 3D</h3>
+        <p>Your whole schema as a navigable universe. Warp-search any object, show or
+          hide galaxies, and open an <b>Object Manager-style detail card</b> where every
+          row deep-links into Setup.</p></div>
+      <div class="card"><div class="ico">⚡</div><h3>Flow read/write detection</h3>
+        <p>Flows are tagged with whether they <b>read</b> or <b>write</b> the focused
+          field — resolved through variables, formulas, and $Record.</p></div>
+      <div class="card"><div class="ico">🔍</div><h3>Standard-field where-used</h3>
+        <p>Marco's own metadata scan covers what Salesforce's dependency API can't see —
+          layouts, validation rules, active flows, quick actions, compact layouts.</p></div>
+      <div class="card"><div class="ico">📄</div><h3>Impact reports</h3>
+        <p>A printable “what breaks if I change this” document with risk tiles and a
+          generated checklist — attach it to your change request.</p></div>
+      <div class="card"><div class="ico">🐣</div><h3>Feed Your Admin</h3>
+        <p>Documentation-health gamification: a coverage score, an impact-sorted queue,
+          and a pixel admin that grows from egg to superhero as your org gets documented.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Privacy isn't a feature. It's the architecture.</h2>
+    <div class="privacy-box">
+      <h3>Your org's metadata never leaves your browser.</h3>
+      <ul>
+        <li><b>No servers.</b> Marco's only network calls are from your browser directly
+          to your own Salesforce org's APIs, using the session you already have.</li>
+        <li><b>No accounts, no telemetry, no tracking.</b> We don't know when you install
+          it, open it, or what org you point it at — and we like it that way.</li>
+        <li><b>No remote code.</b> Everything ships in the extension and is reviewed by
+          the Chrome Web Store.</li>
+        <li><b>Read-only in production.</b> The only thing Marco can ever write is a
+          component description — and only in sandboxes and Developer Edition orgs,
+          at your explicit request.</li>
+      </ul>
+    </div>
+    <p class="privacy-more"><a href="privacy.html">Read the full privacy policy →</a></p>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>Simple pricing, no subscription</h2>
+    <p class="lead">Free while in beta. When Marco launches publicly:</p>
+    <div class="price-row">
+      <div class="price">
+        <h3>Free</h3><div class="amt">$0</div><div class="per">forever</div>
+        <ul><li>Inspect &amp; dependency graph</li><li>Search any component</li>
+          <li>API-name overlay</li><li>Setup deep links</li></ul>
+      </div>
+      <div class="price hot">
+        <h3>PRO</h3><div class="amt">$29</div><div class="per">one-time — yours for good</div>
+        <ul><li>Everything in Free</li><li>Explore in 3D</li><li>Impact reports &amp; exports</li>
+          <li>Permission tracing</li><li>Feed Your Admin</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="legal">
+      © 2026 Creedy Solutions LLC. Salesforce is a trademark of Salesforce, Inc.
+      Marco is an independent product and is not affiliated with, endorsed by, or
+      sponsored by Salesforce, Inc.
+    </div>
+    <div>
+      <a href="privacy.html">Privacy policy</a> ·
+      <a href="mailto:creedysolutions@gmail.com">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
