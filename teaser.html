@@ -23,7 +23,9 @@
   /* Three.js scene fills the viewport. pointerEvents auto so drag/wheel/click
      all work; the overlay content above uses pointer-events:none to let the
      scene stay grabbable, then re-enables per element. */
-  #scene { position: fixed; inset: 0; z-index: 1; }
+  /* touch-action:none — the canvas owns every gesture (drag-orbit, pinch-zoom,
+     tap); without it iOS/Android hijack pinch for page zoom and drags scroll. */
+  #scene { position: fixed; inset: 0; z-index: 1; touch-action: none; }
   #vignette { position: fixed; inset: 0; z-index: 2; pointer-events: none;
     background: radial-gradient(75% 90% at 50% 44%, rgba(5, 6, 14, .55) 0%,
       rgba(5, 6, 14, .25) 45%, rgba(5, 6, 14, .88) 100%); }
@@ -171,6 +173,31 @@
     border-radius: 20px; padding: 1px 8px; min-width: 18px; text-align: center; }
   .fsec.empty { opacity: .5; }
   .fsec.empty .nm { color: #8b95ad; font-weight: 500; }
+
+  /* --- phones --- */
+  @media (max-width: 640px) {
+    main { padding: 16px; }
+    .mark { width: 52px; height: 52px; border-radius: 14px; margin: 22px auto 12px; }
+    .mark::before { left: 12px; top: 14px; width: 28px; height: 8px; }
+    .mark::after { left: 12px; top: 14px; width: 8px; height: 24px; }
+    .name { font-size: 26px; }
+    .line { font-size: 15px; margin-top: 16px; }
+    .soon { margin-top: 16px; }
+    .play { margin-top: 18px; padding: 13px 26px; font-size: 15px; } /* bigger tap target */
+    .game { top: 10px; padding: 10px 34px 12px 14px; } /* right pad clears the ✕ */
+    .g-target { font-size: 17px; }
+    .g-time { font-size: 24px; margin-top: 6px; }
+    .g-end { padding: 8px 10px; font-size: 15px; } /* finger-sized close */
+    .gtoast { font-size: 34px; }
+    .hoverlabel { font-size: 13px; padding: 6px 12px; }
+    footer { font-size: 10px; bottom: 8px; }
+    /* non-game focus card: bottom sheet instead of a side card */
+    #focus { top: auto; left: 12px; right: 12px; bottom: 12px; transform: none;
+      width: auto; max-height: 46vh; overflow-y: auto; }
+    #focus .close { padding: 8px 10px; font-size: 15px; }
+    /* mid-game, center screen is tap territory — clear the brand out of it */
+    body.gaming .mark, body.gaming .name, body.gaming .polo { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -237,6 +264,6 @@
 
   <script src="assets/vendor/three-r128.min.js"></script>
   <!-- bump ?v= whenever teaser-sim.js changes so browsers pick it up. -->
-  <script src="assets/teaser-sim.js?v=11"></script>
+  <script src="assets/teaser-sim.js?v=12"></script>
 </body>
 </html>

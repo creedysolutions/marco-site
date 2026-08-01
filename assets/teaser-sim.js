@@ -11,6 +11,8 @@
 
 (() => {
   const canvas = document.getElementById("scene");
+  // Touch-first devices get different verbs (tap/pinch) and coaching text.
+  const COARSE = matchMedia("(pointer: coarse)").matches;
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x05060e, 260, 620);
 
@@ -240,14 +242,42 @@
   }
   updateCamera();
 
-  // --- interaction: drag / wheel / click ---------------------------------
+  // --- interaction: drag / pinch / wheel / click / tap --------------------
+  // Touch phones get a different game verb: hover doesn't exist, so a first
+  // tap on a star reads its name and a second tap on the same star guesses.
   let dragging = false, movedPx = 0, lastX = 0, lastY = 0;
+  const activePtrs = new Map(); // pointerId → {x, y} — 2 entries = pinch
+  let pinchDist = 0, pinched = false; // pinched suppresses the tap on release
+  const ptrDist = () => {
+    const [a, b] = [...activePtrs.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
   canvas.addEventListener("pointerdown", (e) => {
-    dragging = true; movedPx = 0;
-    lastX = e.clientX; lastY = e.clientY;
-    canvas.setPointerCapture(e.pointerId);
+    activePtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (activePtrs.size === 2) {
+      dragging = false; pinched = true;
+      pinchDist = ptrDist();
+    } else if (activePtrs.size === 1) {
+      dragging = true; movedPx = 0; pinched = false;
+      lastX = e.clientX; lastY = e.clientY;
+    }
+    // Best-effort: capture can throw (pointer already gone, synthetic events)
+    // and must never take the drag/tap state down with it.
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* fine */ }
   });
   canvas.addEventListener("pointermove", (e) => {
+    if (activePtrs.has(e.pointerId)) activePtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (activePtrs.size === 2) {
+      // pinch zoom — same clamp as the wheel path
+      const d = ptrDist();
+      if (pinchDist > 0 && d > 0) {
+        camDist = Math.max(45, Math.min(320, camDist * (pinchDist / d)));
+        autoRotate = false;
+        updateCamera();
+      }
+      pinchDist = d;
+      return;
+    }
     if (!dragging) return;
     const dx = e.clientX - lastX, dy = e.clientY - lastY;
     movedPx += Math.abs(dx) + Math.abs(dy);
@@ -257,24 +287,51 @@
     autoRotate = false;
     updateCamera();
   });
+  const endPtr = (e) => {
+    activePtrs.delete(e.pointerId);
+    if (activePtrs.size < 2) pinchDist = 0;
+    if (activePtrs.size === 0) dragging = false;
+    if (e.pointerType === "touch") pointerActive = false; // no lingering hover field
+  };
+  canvas.addEventListener("pointercancel", endPtr);
   canvas.addEventListener("pointerup", (e) => {
-    dragging = false;
-    // small movement = click → raycast
-    if (movedPx < 6) {
-      const rect = canvas.getBoundingClientRect();
-      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      const rc = new THREE.Raycaster();
-      rc.setFromCamera({ x: nx, y: ny }, camera);
-      const hit = rc.intersectObjects(meshes, false)[0];
-      if (game.on) {
-        // During a round, a click IS a guess — and it also opens the star's
-        // detail card so users see what they clicked (right or wrong).
-        game.guess(hit ? hit.object.userData.node : null);
-        if (hit) focusOn(hit.object.userData.node);
-      } else if (hit) focusOn(hit.object.userData.node);
-      else clearFocus();
-    }
+    const isTouch = e.pointerType === "touch";
+    const wasTap = dragging && !pinched && movedPx < (isTouch ? 12 : 6);
+    endPtr(e);
+    if (!wasTap) return;
+    const rect = canvas.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    const rc = new THREE.Raycaster();
+    rc.setFromCamera({ x: nx, y: ny }, camera);
+    const hit = rc.intersectObjects(meshes, false)[0];
+    if (game.on) {
+      if (!hit) { // empty space: mouse = miss, touch = just deselect
+        if (isTouch) { game.touchSel = null; game.label.hidden = true; }
+        else game.guess(null);
+        return;
+      }
+      const node = hit.object.userData.node;
+      if (isTouch) {
+        if (game.touchSel === node) {
+          // second tap on the same star = the guess
+          game.touchSel = null; game.label.hidden = true;
+          game.guess(node);
+        } else {
+          // first tap = read the name (the hover equivalent)
+          game.touchSel = node;
+          game.label.textContent = node.id + "  ·  tap again to guess";
+          game.label.style.left = e.clientX + "px";
+          game.label.style.top = e.clientY + "px";
+          game.label.hidden = false;
+        }
+      } else {
+        // Desktop: a click IS a guess — and opens the star's detail card.
+        game.guess(node);
+        focusOn(node);
+      }
+    } else if (hit) focusOn(hit.object.userData.node);
+    else clearFocus();
   });
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
@@ -327,7 +384,7 @@
     const dpx = Math.hypot(e.clientX - lastPx, e.clientY - lastPy);
     const speed = dpx / Math.max(1, now - lastMoveT); // px per ms
     lastPx = e.clientX; lastPy = e.clientY; lastMoveT = now;
-    if (!dragging) {
+    if (!dragging && activePtrs.size < 2) {
       // Spawn a ripple every ~40px of travel — so a fast flick lays down a
       // whole streak of them along the path instead of one every 90ms. Each
       // ripple's amplitude scales with speed: a quick flick hits hard, a
@@ -429,6 +486,7 @@
     best: +(localStorage.getItem("marcoGameBest") || 0),
     bestScore: +(localStorage.getItem("marcoGameBestScore") || 0),
     roundT: 0, hovered: null, hintLevel: 0,
+    touchSel: null, // touch: star whose name is showing — next tap on it = guess
     startedT: 0, // wall-clock start of this run
     el: $("game"), name: $("gName"), scoreEl: $("gScore"),
     streakEl: $("gStreak"), bestEl: $("gBest"), hintEl: $("gHint"),
@@ -483,7 +541,10 @@
       this.target = t;
       this.name.textContent = t.id;
       this.roundT = performance.now();
-      this.hintLevel = 0; this.hintEl.textContent = "";
+      this.touchSel = null; this.label.hidden = true;
+      this.hintLevel = 0;
+      // Touch has no hover — teach the two-tap verb until a real hint replaces it.
+      this.hintEl.textContent = COARSE ? "tap a star to read it · tap it again to guess" : "";
     },
     guess(node) {
       if (!node) return; // clicked empty space
@@ -517,7 +578,7 @@
 
   // --- share: native share sheet on mobile/supported; clipboard + compose
   // links elsewhere. LinkedIn/X/Reddit are all supported in the fallback.
-  const TEASER_URL = "https://creedysolutions.github.io/marco-site/teaser.html";
+  const TEASER_URL = "https://marco.creedysolutions.com/teaser.html";
   function bragText() {
     const s = game.score, streak = game.best;
     return `I found ${s} object${s === 1 ? "" : "s"} in Marco's 3D Salesforce galaxy (best streak ${streak}). Think you can beat me? ${TEASER_URL}`;
@@ -553,6 +614,7 @@
   const GROUP_LABEL = { std: "slate", custom: "purple", cpq: "gold", fsl: "green", inv: "cyan", mdt: "pink" };
   $("playBtn").addEventListener("click", () => game.start());
   $("gEnd").addEventListener("click", () => game.end());
+  if (COARSE) document.querySelector(".hint").textContent = "drag to orbit · pinch to zoom · tap a star";
 
   // --- animate: autorotate + mouse-reaction physics + line-follow --------
   const _disp = new THREE.Vector3(), _dir = new THREE.Vector3();
@@ -604,7 +666,7 @@
           game.label.style.top = lastPy + "px";
           game.label.hidden = false;
         } else game.label.hidden = true;
-      } else { game.label.hidden = true; game.hovered = null; }
+      } else if (!game.touchSel) { game.label.hidden = true; game.hovered = null; }
     }
 
     for (const m of meshes) {
