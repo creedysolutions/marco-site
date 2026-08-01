@@ -36,7 +36,7 @@
   <a class="back" href="index.html">← Marco</a>
   <h1>Privacy Policy</h1>
   <div class="meta"><b>Marco — Where Used for Salesforce</b> · Effective date: July 2026 ·
-    Contact: <a href="mailto:creedysolutions+marco@gmail.com">creedysolutions+marco@gmail.com</a></div>
+    Contact: <a href="mailto:marco@creedysolutions.com">marco@creedysolutions.com</a></div>
 
   <p>Marco is a Google Chrome extension that helps Salesforce administrators and
   developers see where components (fields, flows, Apex classes, layouts, validation
@@ -84,9 +84,10 @@
     <li><b>IndexedDB (in your browser)</b> — cached dependency results and per-org
       flow indexes, so repeat queries are instant. One database per Salesforce org ID.
       Nothing here is synced across devices.</li>
-    <li><b><code>chrome.storage.local</code> (in your browser)</b> — user settings
-      only, such as the per-org overlay toggle and whether you've seen the first-run
-      tour.</li>
+    <li><b><code>chrome.storage.local</code> (in your browser)</b> — user settings,
+      such as the per-org overlay toggle and whether you've seen the first-run
+      tour; plus, if you buy PRO, your license key and its signed activation
+      token.</li>
     <li><b>Page-local storage (<code>localStorage</code>, in your browser)</b> — view
       preferences for the Universe page, such as which galaxies you've hidden.</li>
   </ul>
@@ -105,10 +106,20 @@
   </ul>
 
   <h2>Third-party services</h2>
-  <p>Marco makes network requests to only one destination: <b>your own Salesforce
-  org's domain</b> (<code>*.salesforce.com</code>, <code>*.force.com</code>,
-  <code>*.salesforce-setup.com</code>). Marco does not contact any server operated by
-  us, or by any third party.</p>
+  <p>Marco makes network requests to two destinations, and no others:</p>
+  <ol>
+    <li><b>Your own Salesforce org's domain</b> (<code>*.salesforce.com</code>,
+      <code>*.force.com</code>, <code>*.salesforce-setup.com</code>) — all metadata
+      reads and the optional description edits described above.</li>
+    <li><b>Marco's license server</b> (<code>license.creedysolutions.com</code>) —
+      only when you activate or renew a PRO license key. This request carries exactly
+      two values: the license key you typed and a random install identifier that Marco
+      generated locally (it is not derived from your machine, browser profile, or any
+      Salesforce org). No Salesforce data, cookies, org IDs, or metadata are ever sent
+      to the license server. If you never buy PRO, Marco never contacts it at all.</li>
+  </ol>
+  <p>Payment itself is handled entirely by our merchant of record (Lemon Squeezy) on
+  their own pages — Marco never sees your payment details.</p>
 
   <h2>Future opt-in AI features (not in the current beta)</h2>
   <p>Future paid versions of Marco may offer an opt-in “Ask Marco” feature that uses
@@ -139,7 +150,7 @@
   and note the change in the Marco release notes.</p>
 
   <h2>Contact</h2>
-  <p>Questions: <a href="mailto:creedysolutions+marco@gmail.com">creedysolutions+marco@gmail.com</a></p>
+  <p>Questions: <a href="mailto:marco@creedysolutions.com">marco@creedysolutions.com</a></p>
 </div>
 </body>
 </html>
