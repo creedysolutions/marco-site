@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support — Marco — Where Used for Salesforce</title>
+<meta name="description" content="Get help with Marco: setup requirements, license keys, troubleshooting, and how to reach us.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+  :root { --bg: #05060e; --panel: #10142a; --line: #232946; --ink: #e8ebf5;
+    --ink-soft: #9aa4bd; --dim: #6b7590; --accent-2: #8b7bff; --green: #7be3a3; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 56px 24px 80px; }
+  .back { font-size: 14px; }
+  h1 { font-size: 34px; font-weight: 800; letter-spacing: -.5px; margin: 18px 0 4px; }
+  .meta { color: var(--dim); font-size: 14px; margin-bottom: 30px; }
+  .contact { background: var(--panel); border: 1px solid #2c5a3f; border-radius: 14px;
+    padding: 22px 26px; margin: 26px 0 8px; }
+  .contact b { color: var(--green); }
+  h2 { font-size: 21px; font-weight: 700; margin: 38px 0 10px; }
+  h3 { font-size: 16px; font-weight: 700; margin: 24px 0 6px; }
+  p, li { color: var(--ink-soft); }
+  p b, li b { color: var(--ink); }
+  ul, ol { padding-left: 22px; margin: 10px 0; }
+  li { margin: 7px 0; }
+  code { background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+    padding: 1px 6px; font-size: 14px; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Marco</a>
+  <h1>Support</h1>
+  <div class="meta"><b>Marco — Where Used for Salesforce</b></div>
+
+  <div class="contact"><b>Fastest way to get help:</b> email
+    <a href="mailto:marco@creedysolutions.com">marco@creedysolutions.com</a>.
+    Include your Chrome version and, if it's a bug, what you clicked and what
+    you expected — a screenshot of the side panel helps enormously. Real
+    human, usually within a day.</div>
+
+  <h2>Before anything else</h2>
+  <ul>
+    <li>Marco needs the <b>API Enabled</b> permission on your Salesforce
+      profile — the same permission Salesforce Inspector and Workbench need.
+      If those tools work for you, Marco will too.</li>
+    <li>After an extension update, Chrome sometimes needs a nudge: visit
+      <code>chrome://extensions</code>, hit the ↻ on Marco's card, and reload
+      your Salesforce tab.</li>
+  </ul>
+
+  <h2>Common questions</h2>
+
+  <h3>The panel says "No Salesforce session"</h3>
+  <p>Open (or refresh) a tab where you're logged into the org, then click
+    Marco's icon again. Marco reuses your existing login — it never asks for
+    credentials.</p>
+
+  <h3>The panel opens but stays empty</h3>
+  <p>Marco activates on Salesforce Setup pages and record pages. Navigate to
+    a field, flow, or Apex class in Setup — or use the search bar at the top
+    of the panel to jump straight to any component by name.</p>
+
+  <h3>Where do I enter my PRO license key?</h3>
+  <p>Click the <b>PRO</b> chip in the panel header, paste your key
+    (<code>MARCO-XXXXX-XXXXX-XXXXX</code>), and hit Activate. The three PRO
+    features — Impact report, the Access tab, and Explore in 3D — unlock
+    immediately. One key works on up to 8 browsers.</p>
+
+  <h3>"This key has hit its install limit"</h3>
+  <p>You can remove a license from a browser you no longer use (PRO chip →
+    Remove from this browser), or just email us — we'll sort it out.</p>
+
+  <h3>Does my org's data leave my browser?</h3>
+  <p>No. All metadata queries run from your browser directly to your own
+    Salesforce org, and caches live on your device. The only exception is
+    PRO activation, which sends your license key (and nothing else) to
+    Marco's license server. Full details in the
+    <a href="privacy.html">privacy policy</a>.</p>
+
+  <h3>The 3D Universe looks tangled on my org</h3>
+  <p>Open <b>✛ Layout</b> in the Universe's top bar and drag the Spacing and
+    Grouping sliders — every org's shape is different, and the settings are
+    remembered per org. The <b>Galaxies</b> button can hide packages you
+    don't care about.</p>
+
+  <h3>Something in my org isn't showing as a dependency</h3>
+  <p>Marco builds on Salesforce's dependency API, which is beta and has known
+    blind spots (reports and email templates, notably). Marco supplements it
+    with its own scans for page layouts, validation rules, flows, and compact
+    layouts — but if you've found a miss, we genuinely want to hear about it:
+    <a href="mailto:marco@creedysolutions.com">marco@creedysolutions.com</a>.</p>
+
+  <h2>Feature requests</h2>
+  <p>Send them. The impact-sorted feeding queue, the layout sliders, and the
+    cloud galaxies in the 3D view all started as user asks.</p>
+</div>
+</body>
+</html>
