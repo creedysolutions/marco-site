@@ -241,8 +241,27 @@
         <ul><li>Everything in Free</li><li>Explore in 3D</li><li>Impact reports</li>
           <li>Access &amp; permission tracing</li>
           <li><b>7-day free trial</b> — no card, no email: start it from the PRO chip in Marco's panel</li></ul>
-        <a class="btn primary" href="https://creedysolutions.lemonsqueezy.com/checkout/buy/ae7b534e-4c2f-419d-80f4-32d1edb66eeb">Buy PRO — $29</a>
+        <a class="btn primary" id="buyBtn" href="https://creedysolutions.lemonsqueezy.com/checkout/buy/ae7b534e-4c2f-419d-80f4-32d1edb66eeb">Buy PRO — $29</a>
+        <p id="buySoon" hidden style="margin-top:10px;font-size:12.5px;color:var(--ink-soft, #5a6472)">
+          Checkout opens shortly — payment processing is in final review.
+          Meanwhile the <b>7-day free trial</b> needs no card at all.</p>
       </div>
+      <script>
+        // Buy button gates itself on the license server's live-switch, so a
+        // pre-activation checkout never eats a real card and "declines" it.
+        fetch("https://license.creedysolutions.com/status")
+          .then(r => r.json())
+          .then(s => {
+            if (s.checkoutLive) return;
+            const b = document.getElementById("buyBtn");
+            b.textContent = "Checkout opening soon";
+            b.style.opacity = ".55";
+            b.style.pointerEvents = "none";
+            b.removeAttribute("href");
+            document.getElementById("buySoon").hidden = false;
+          })
+          .catch(() => {}); // server unreachable: leave the real button
+      </script>
     </div>
   </div>
 </section>
