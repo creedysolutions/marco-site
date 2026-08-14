@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<!-- Copyright (c) 2026 Creedy Solutions LLC. Site source: github.com/creedysolutions/marco-site -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marco for Safari — Where Used for Salesforce</title>
+<meta name="description" content="Marco for Safari: click any component in Salesforce Setup and see everywhere it's used — flows, Apex, layouts, validation rules — plus your org schema in 3D. Same as the Chrome version. Metadata never leaves your browser.">
+<meta property="og:title" content="Marco for Safari — Where Used for Salesforce">
+<meta property="og:description" content="Marco. Polo. Found. The Safari version — download, enable, and inspect any Salesforce component's dependencies. Private, in your browser.">
+<meta property="og:image" content="https://marco.creedysolutions.com/assets/og-image.png">
+<link rel="canonical" href="https://marco.creedysolutions.com/safari.html">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+  :root {
+    --bg: #05060e; --bg2: #0a0d1c; --panel: #10142a; --line: #232946;
+    --ink: #e8ebf5; --ink-soft: #9aa4bd; --dim: #6b7590;
+    --accent: #6d5ef2; --accent-2: #8b7bff; --brand: #4338ca;
+    --green: #7be3a3; --gold: #f0b95c; --cyan: #79d2e6; --lav: #a99df7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  header { position: relative; overflow: hidden;
+    background: radial-gradient(90% 120% at 70% 20%, #121736 0%, var(--bg2) 50%, var(--bg) 100%); }
+  .hero { position: relative; padding: 72px 0 52px; text-align: center; }
+  .mark { width: 72px; height: 72px; border-radius: 19px; background: var(--brand);
+    position: relative; margin: 0 auto 24px; box-shadow: 0 0 54px rgba(109, 94, 242, .5); }
+  .mark::before { content: ""; position: absolute; left: 17px; top: 19px;
+    width: 38px; height: 11px; background: #fff; border-radius: 6px; }
+  .mark::after { content: ""; position: absolute; left: 17px; top: 19px;
+    width: 11px; height: 34px; background: #fff; border-radius: 6px; }
+  h1 { font-size: 48px; font-weight: 800; letter-spacing: -1px; }
+  h1 span { color: var(--accent-2); }
+  .tagline { font-size: 20px; color: var(--ink-soft); font-weight: 600; margin-top: 8px; }
+  .sub { max-width: 600px; margin: 20px auto 0; color: var(--ink-soft); font-size: 17px; }
+  .sub b { color: var(--ink); }
+  .cta { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 13px 26px; border-radius: 12px; font-weight: 700;
+    font-size: 15.5px; border: 1px solid var(--line); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-2); text-decoration: none; }
+  .btn.ghost { color: var(--ink); }
+  .btn.ghost:hover { border-color: var(--accent); text-decoration: none; }
+  .req { margin-top: 14px; color: var(--dim); font-size: 13px; }
+
+  section { padding: 54px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 28px; font-weight: 800; letter-spacing: -.5px; text-align: center; }
+  .lead { text-align: center; color: var(--ink-soft); max-width: 620px; margin: 12px auto 0; }
+
+  .steps { margin: 40px auto 0; max-width: 640px; display: grid; gap: 14px; }
+  .step { display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .step .n { width: 32px; height: 32px; border-radius: 9px; background: var(--brand); color: #fff;
+    font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .step h3 { font-size: 16px; font-weight: 700; }
+  .step p { color: var(--ink-soft); font-size: 14.5px; margin-top: 3px; }
+  .step code { background: #0c1024; border: 1px solid var(--line); border-radius: 5px;
+    padding: 1px 6px; font-size: 13px; color: var(--lav); }
+
+  .note { max-width: 640px; margin: 26px auto 0; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; color: var(--ink-soft); font-size: 14.5px; }
+  .note b { color: var(--ink); }
+
+  .cols { max-width: 720px; margin: 36px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+  .card h3 { font-size: 16px; font-weight: 700; }
+  .card p { color: var(--ink-soft); font-size: 14px; margin-top: 6px; }
+  @media (max-width: 640px) { .cols { grid-template-columns: 1fr; } h1 { font-size: 38px; } }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 44px; color: var(--dim); font-size: 13.5px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  footer .legal { max-width: 560px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hero wrap">
+    <div class="mark"></div>
+    <h1>Marco for <span>Safari</span></h1>
+    <div class="tagline">Where Used for Salesforce — now on Safari.</div>
+    <p class="sub">Click any component in Salesforce Setup and see everywhere it's used —
+      flows, Apex, layouts, validation rules — plus your whole org schema as a navigable
+      3D universe. <b>Same features as the Chrome version.</b> Your metadata never leaves
+      your browser.</p>
+    <div class="cta">
+      <!-- TODO: drop the notarized build at downloads/marco-safari.dmg to make this live. -->
+      <a class="btn primary" href="downloads/marco-safari.dmg">Download for Safari</a>
+      <a class="btn ghost" href="/">Using Chrome? Get it here →</a>
+    </div>
+    <p class="req">macOS · Safari 16.4 or later · free to install</p>
+  </div>
+</header>
+
+<section>
+  <h2>Install in about a minute</h2>
+  <p class="lead">Safari extensions live inside a small app, so there are a couple more
+    steps than Chrome — you only do them once.</p>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><div>
+      <h3>Download &amp; open</h3>
+      <p>Open <code>Marco.dmg</code> and drag <b>Marco</b> into your Applications folder.</p>
+    </div></div>
+    <div class="step"><div class="n">2</div><div>
+      <h3>Launch Marco once</h3>
+      <p>Open Marco from Applications. If macOS asks because it came from the internet,
+        click <b>Open</b>. Keep the app in Applications — the extension lives inside it.</p>
+    </div></div>
+    <div class="step"><div class="n">3</div><div>
+      <h3>Turn it on in Safari</h3>
+      <p>Safari → <b>Settings → Extensions</b> → switch on <b>Marco — Where Used</b>.</p>
+    </div></div>
+    <div class="step"><div class="n">4</div><div>
+      <h3>Allow website access</h3>
+      <p>Choose <b>Always Allow on Every Website</b>. This lets Marco reuse your existing
+        Salesforce session — it never asks for your credentials.</p>
+    </div></div>
+    <div class="step"><div class="n">5</div><div>
+      <h3>Say Marco</h3>
+      <p>Open any component in Setup and click the purple Marco icon in the toolbar.
+        Everywhere it's used, instantly.</p>
+    </div></div>
+  </div>
+  <div class="note">
+    <b>Trouble finding the icon?</b> It's a purple square near Safari's address bar.
+    If it's hidden, right-click the toolbar → <b>Customize Toolbar…</b> and drag Marco up.
+  </div>
+</section>
+
+<section>
+  <h2>Same Marco, same PRO</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>Free forever</h3>
+      <p>Inspect, dependency graph, list view, and one-click Setup links. No account,
+        no sign-up.</p>
+    </div>
+    <div class="card">
+      <h3>PRO — $29 one-time</h3>
+      <p>Impact reports, permission tracing, and your org in 3D. Start a <b>7-day free
+        trial</b> right in the panel — no card. Your existing PRO key works here too.</p>
+    </div>
+    <div class="card">
+      <h3>Private by design</h3>
+      <p>Your org's metadata never leaves your browser. No telemetry, no tracking —
+        same privacy guarantee as the Chrome version.</p>
+    </div>
+    <div class="card">
+      <h3>Already a Marco user?</h3>
+      <p>Your Chrome and Safari installs share the same PRO license — activate your key
+        in the panel and you're set.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="legal">
+      © 2026 Creedy Solutions LLC. Salesforce is a trademark of Salesforce, Inc.
+      Marco is an independent product and is not affiliated with, endorsed by, or
+      sponsored by Salesforce, Inc.
+    </div>
+    <div>
+      <a href="/">Home</a> ·
+      <a href="teaser.html">Marco… Polo! (the game)</a> ·
+      <a href="support.html">Support</a> ·
+      <a href="privacy.html">Privacy policy</a> ·
+      <a href="mailto:marco@creedysolutions.com">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
