@@ -13,7 +13,7 @@ other way) puts the OLD design back on the live site. That happened once already
 
    ```bash
    node remake/rebrand/marco-site.mjs && python3 remake/rebrand/release.py
-   npx wrangler@4 pages deploy dist/marco --project-name marco-site --branch main --commit-dirty=true
+   cd dist/marco && npx wrangler@4 pages deploy . --project-name marco-site --branch main --commit-dirty=true
    ```
 
    The build restyles the pages, merges in every other file from this folder unchanged, and checks the
@@ -24,3 +24,6 @@ byte-for-byte by that build; it stops if anything there changed.
 
 Details, rollback and the full rules: `creedysolutions-redesign/KEEP.md`, section 0.
 Not covered here: fawnhaven.creedysolutions.com is a separate project and stays exactly as it is.
+
+Deploy from INSIDE `dist/<site>` as shown: wrangler reads `./functions/` from the current directory, and the
+redesign repo root has the preview passcode gate there, which must never reach production.
