@@ -215,6 +215,127 @@
     lineRecords.push({ geo, a: ma, b: mb });
   }
 
+  // --- deep space (Marco 1.0.9's Universe look) -----------------------------
+  // The same visual language as the extension's universe/space.js: a dark nebula backdrop with a whisper of
+  // violet, twinkling stars at infinity, a soft corona around every object, pulsing rings on the hubs, and
+  // a drifting mist over each galaxy. All on r128's own classes (no extra library).
+  const NOISE3 = `
+    float hash31(vec3 p) { p = fract(p * 0.1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }
+    float vnoise(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(mix(hash31(i), hash31(i + vec3(1,0,0)), f.x), mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), f.x), f.y),
+                 mix(mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), f.x), mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), f.x), f.y), f.z); }
+    float fbm3(vec3 p) { float a = 0.0, w = 0.5; for (int i = 0; i < 4; i++) { a += w * vnoise(p); p = p * 2.03 + 17.1; w *= 0.5; } return a / 0.9375; }`;
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    vertexShader: "varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+    fragmentShader: NOISE3 + `
+      varying vec3 vDir;
+      void main(){
+        vec3 d = normalize(vDir);
+        float n = fbm3(d * 2.2 + 4.0), m = fbm3(d * 5.0 - 2.0);
+        vec3 col = vec3(0.008, 0.01, 0.022);
+        col += vec3(0.035, 0.04, 0.09) * smoothstep(0.45, 0.85, n) * (0.5 + m);
+        col += vec3(0.06, 0.028, 0.09) * smoothstep(0.62, 0.9, m) * 0.7;
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+  }));
+  sky.renderOrder = -10;
+  scene.add(sky);
+
+  const STAR_N = 2600, sDir = new Float32Array(STAR_N * 3), sSeed = new Float32Array(STAR_N);
+  let seedR = 7;
+  const rnd = () => ((seedR = (seedR * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < STAR_N; i++) {
+    const z = rnd() * 2 - 1, a = rnd() * Math.PI * 2, r = Math.sqrt(1 - z * z);
+    sDir.set([Math.cos(a) * r * 950, z * 950, Math.sin(a) * r * 950], i * 3);
+    sSeed[i] = rnd();
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute("position", new THREE.BufferAttribute(sDir, 3));
+  starGeo.setAttribute("aSeed", new THREE.BufferAttribute(sSeed, 1));
+  const starMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+    uniforms: { uTime: { value: 0 }, uPx: { value: Math.min(devicePixelRatio, 2) } },
+    vertexShader: `attribute float aSeed; uniform float uTime, uPx; varying float vA; varying float vWarm;
+      void main(){ vA = 0.55 + 0.45 * sin(uTime * (0.6 + aSeed * 1.4) + aSeed * 40.0); vWarm = step(0.88, fract(aSeed * 7.13));
+        gl_PointSize = (1.0 + aSeed * aSeed * 2.6) * uPx; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `varying float vA; varying float vWarm;
+      void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d); a *= a;
+        gl_FragColor = vec4(mix(vec3(0.75, 0.82, 1.0), vec3(1.0, 0.9, 0.75), vWarm) * a * vA * 0.9, a); }`,
+  });
+  const stars = new THREE.Points(starGeo, starMat);
+  stars.renderOrder = -9;
+  scene.add(stars);
+
+  // corona and ring textures, drawn once
+  const glowTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.18, "rgba(255,255,255,.55)");
+    gr.addColorStop(0.42, "rgba(255,255,255,.14)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  const ringTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 40, 64, 64, 62);
+    gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.6, "rgba(255,255,255,.9)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  const mistTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 256;
+    const g = c.getContext("2d");
+    for (let i = 0; i < 26; i++) {
+      const x = 128 + (rnd() - 0.5) * 120, y = 128 + (rnd() - 0.5) * 120, r = 40 + rnd() * 70;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, "rgba(255,255,255,.16)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    }
+    return new THREE.CanvasTexture(c);
+  })();
+  const sprite = (tex, color, opacity) => new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color, opacity, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const coronas = meshes.map((m) => {
+    const s = sprite(glowTex, COLORS[m.userData.node.grp], 0.55);
+    s.scale.setScalar(m.userData.baseScale * 5.2);
+    s.renderOrder = 2;
+    scene.add(s);
+    return s;
+  });
+  // hubs: the most connected objects breathe and send out two rings, like the extension's "hot" stars
+  const degree = new Map();
+  for (const [s, t] of links) { degree.set(s, (degree.get(s) || 0) + 1); degree.set(t, (degree.get(t) || 0) + 1); }
+  const hubs = meshes.filter((m) => (degree.get(m.userData.node.id) || 0) >= 5).slice(0, 6).map((m, i) => {
+    const rings = [0, 1].map(() => { const r = sprite(ringTex, COLORS[m.userData.node.grp], 0); r.renderOrder = 3; scene.add(r); return r; });
+    return { m, rings, phase: i * 0.37 };
+  });
+  // mist over each galaxy, at its centre, sized by its spread
+  const mists = Object.keys(COLORS).map((grp) => {
+    const ms = nodes.filter((n) => n.grp === grp);
+    if (!ms.length) return null;
+    const c = new THREE.Vector3(); ms.forEach((n) => c.add(n.pos)); c.multiplyScalar(1 / ms.length);
+    const spread = Math.max(...ms.map((n) => n.pos.distanceTo(c)));
+    const s = sprite(mistTex, COLORS[grp], grp === "std" ? 0.16 : 0.3);
+    s.position.copy(c); s.scale.setScalar(spread * 3 + 20); s.renderOrder = 1;
+    scene.add(s);
+    return s;
+  }).filter(Boolean);
+  function updateSpace(now) {
+    const t = now / 1000;
+    starMat.uniforms.uTime.value = t;
+    sky.position.copy(camera.position); stars.position.copy(camera.position);
+    meshes.forEach((m, i) => { coronas[i].position.copy(m.position); coronas[i].scale.setScalar(m.scale.x * 5.2); coronas[i].material.opacity = Math.min(0.75, 0.32 + m.material.emissiveIntensity * 0.42); });
+    for (const h of hubs) {
+      h.rings.forEach((r, k) => {
+        const ph = ((t * 0.45 + h.phase + k * 0.5) % 1);
+        r.position.copy(h.m.position);
+        r.scale.setScalar(h.m.scale.x * (2.2 + ph * 7));
+        r.material.opacity = (1 - ph) * (1 - ph) * 0.45;
+      });
+    }
+    mists.forEach((s, i) => { s.material.rotation = t * 0.02 * (i % 2 ? 1 : -1); });
+  }
+
   // --- camera framing ----------------------------------------------------
   // Frame the actual bounding box (averages drift toward dense clusters).
   const bbox = new THREE.Box3();
@@ -726,6 +847,7 @@
       rec.geo.attributes.position.needsUpdate = true;
     }
 
+    updateSpace(now);
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   }

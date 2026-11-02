@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <!-- teaser.html — LinkedIn campaign page. Interactive 3D galaxy sim behind
-     the hook: fake data, faithful visual language. Not linked from index.html
-     (deliberately more mysterious than the main site). -->
+     the hook: fake data, faithful visual language (Marco 1.0.9's deep-space
+     Universe). Not linked from index.html. Marco is live: the page points at
+     the Chrome Web Store. -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Something's coming for Salesforce admins</title>
-<meta name="description" content="If I change this field… what breaks? Soon you'll answer that in one click. Marco. Polo. Found.">
-<meta property="og:title" content="Something's coming for Salesforce admins">
-<meta property="og:description" content="“If I change this… what breaks?” Soon: one click answers it — and your whole org becomes a navigable 3D universe. Nothing leaves your browser.">
+<title>Marco: what breaks if you change it?</title>
+<meta name="description" content="If I change this field… what breaks? Marco answers that in one click, on the Chrome Web Store now. Marco. Polo. Found.">
+<meta property="og:title" content="Marco: what breaks if you change it?">
+<meta property="og:description" content="“If I change this… what breaks?” One click answers it, and your whole org becomes a navigable 3D universe. Free on the Chrome Web Store. Nothing leaves your browser.">
 <meta property="og:image" content="https://marco.creedysolutions.com/assets/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://marco.creedysolutions.com/teaser.html">
@@ -41,7 +42,7 @@
   .q .dim { color: #8b95ad; }
 
   .mark { width: 64px; height: 64px; border-radius: 17px; background: #4338ca;
-    position: relative; margin: 34px auto 16px; box-shadow: 0 0 46px rgba(109, 94, 242, .6);
+    position: relative; margin: 34px auto 16px; box-shadow: 0 0 46px rgba(109, 94, 242, .6), 0 0 0 1px rgba(155, 123, 255, .35);
     pointer-events: none; }
   .mark::before { content: ""; position: absolute; left: 15px; top: 17px;
     width: 34px; height: 10px; background: #fff; border-radius: 5px; }
@@ -54,7 +55,19 @@
   .line { color: #9aa4bd; margin: 22px auto 0; max-width: 560px; pointer-events: none;
     text-shadow: 0 2px 14px rgba(0, 0, 0, .9); }
   .line b { color: #e8ebf5; }
-  .soon { color: #7b84a3; font-size: 13px; margin-top: 24px; letter-spacing: .3px;
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+  .cta a { padding: 12px 22px; border-radius: 11px; font-size: 14.5px; font-weight: 700; letter-spacing: .2px;
+    text-decoration: none; transition: background .15s, border-color .15s, box-shadow .15s; }
+  .cta .add { background: linear-gradient(135deg, #6d5ef2, #9b7bff); color: #fff;
+    box-shadow: 0 8px 30px rgba(109, 94, 242, .45), 0 0 0 1px rgba(155, 123, 255, .5); }
+  .cta .add:hover { box-shadow: 0 10px 40px rgba(109, 94, 242, .7), 0 0 0 1px #b5a2ff; }
+  .cta .more { color: #cfc9ff; border: 1px solid #3a3f66; background: rgba(13, 16, 28, .55); }
+  .cta .more:hover { border-color: #6d5ef2; color: #fff; }
+  body.gaming .cta { display: none; }
+  /* film grain, as in the extension's Universe grade */
+  #grain { position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: .06; mix-blend-mode: screen;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .soon { color: #7b84a3; font-size: 13px; margin-top: 18px; letter-spacing: .3px;
     pointer-events: none; text-shadow: 0 2px 12px rgba(0, 0, 0, .9); }
   .hint { color: #6b7590; font-size: 12px; margin-top: 6px; pointer-events: none;
     text-shadow: 0 2px 12px rgba(0, 0, 0, .9); }
@@ -203,6 +216,7 @@
 <body>
   <canvas id="scene"></canvas>
   <div id="vignette"></div>
+  <div id="grain"></div>
 
   <div class="overlay">
     <main>
@@ -212,7 +226,11 @@
       <div class="polo">Marco. Polo. Found.</div>
       <p class="line">One click on any Salesforce component. <b>Everywhere it's used</b>,
         both directions. Your whole org as a <b>navigable 3D universe</b>.</p>
-      <div class="soon">Private beta now · Chrome Web Store</div>
+      <div class="cta">
+        <a class="add" href="https://chromewebstore.google.com/detail/hlagpimidhfcnfhncfkmcnhdfjhihgfb" target="_blank" rel="noopener">Add to Chrome — free</a>
+        <a class="more" href="/">See what Marco does</a>
+      </div>
+      <div class="soon">Live on the Chrome Web Store · PRO adds impact reports, Access and 3D</div>
       <div class="hint">drag to orbit · scroll to zoom · click a star</div>
       <button id="playBtn" class="play">▶ Play “Marco… Polo!”</button>
     </main>
@@ -264,6 +282,6 @@
 
   <script src="assets/vendor/three-r128.min.js"></script>
   <!-- bump ?v= whenever teaser-sim.js changes so browsers pick it up. -->
-  <script src="assets/teaser-sim.js?v=12"></script>
+  <script src="assets/teaser-sim.js?v=13"></script>
 </body>
 </html>
