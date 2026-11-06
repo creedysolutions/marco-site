@@ -270,6 +270,26 @@
           })
           .catch(() => {}); // server unreachable: leave the real button
       </script>
+      <div class="price">
+        <h3>The Explorers Kit</h3><div class="amt">$79</div><div class="per">one-time · Marco, Polo, and Magellan</div>
+        <ul><li>One key unlocks PRO in all three</li><li>Marco: where used, impact, 3D</li>
+          <li><a href="https://creedysolutions.com/polo">Polo: org compare and drift</a></li><li><a href="https://creedysolutions.com/magellan">Magellan: best-practice findings</a></li><li>$107 bought separately</li></ul>
+        <a class="btn ghost" id="kitBtn" href="https://creedysolutions.lemonsqueezy.com/checkout/buy/26f8d7a4-0077-4c21-a514-dec266e2041d">Buy the kit — $79</a>
+        <p id="kitSoon" hidden style="margin-top:10px;font-size:12.5px;color:var(--ink-soft, #5a6472)">Checkout opens shortly.</p>
+      </div>
+      <script>
+        // The Explorers Kit button follows the license server's live switch for the bundle.
+        fetch("https://license.creedysolutions.com/status?product=bundle")
+          .then(r => r.json())
+          .then(s => {
+            if (s.checkoutLive) return;
+            const b = document.getElementById("kitBtn");
+            b.textContent = "Checkout opening soon";
+            b.style.opacity = ".55"; b.style.pointerEvents = "none"; b.removeAttribute("href");
+            document.getElementById("kitSoon").hidden = false;
+          })
+          .catch(() => {});
+      </script>
     </div>
   </div>
 </section>
